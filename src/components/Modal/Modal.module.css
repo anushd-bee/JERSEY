@@ -1,0 +1,8 @@
+/* Size modifiers applied to .modal from globals.css */
+.lg {
+    max-width: 640px;
+}
+
+.xl {
+    max-width: 800px;
+}

@@ -1,0 +1,105 @@
+.wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-height: 60vh;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+.text {
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+
+/* Skeleton */
+.skeletonGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+}
+
+.skeletonCard {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.skeletonImage {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(90deg,
+            var(--border) 25%,
+            #f0f0f0 37%,
+            var(--border) 63%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonInfo {
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.skeletonLine {
+    height: 14px;
+    background: linear-gradient(90deg,
+            var(--border) 25%,
+            #f0f0f0 37%,
+            var(--border) 63%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+}
+
+.skeletonLineShort {
+    composes: skeletonLine;
+    width: 50%;
+}
+
+.skeletonLineWide {
+    composes: skeletonLine;
+    width: 80%;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@media (min-width: 768px) {
+    .skeletonGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-lg);
+    }
+}
+
+@media (min-width: 1280px) {
+    .skeletonGrid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-xl);
+    }
+}

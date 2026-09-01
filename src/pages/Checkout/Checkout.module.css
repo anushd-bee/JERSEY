@@ -1,0 +1,361 @@
+/* ===================================================
+   CHECKOUT PAGE — Premium styling (Phase 6)
+   =================================================== */
+
+.page {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-md) var(--space-5xl);
+}
+
+.header {
+    margin-bottom: var(--space-2xl);
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-black);
+    letter-spacing: var(--tracking-tightest);
+    color: var(--color-text);
+    line-height: var(--leading-none);
+}
+
+.formContainer {
+    width: 100%;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+    align-items: start;
+}
+
+/* Shipping Form Panel */
+.formPanel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+}
+
+.panelTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.label {
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+    color: var(--color-muted);
+}
+
+.input,
+.textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: var(--text-sm);
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text);
+    outline: none;
+    transition: all var(--transition-fast);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+    color: var(--color-border-dark);
+}
+
+.input:focus,
+.textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+
+.inputError {
+    border-color: var(--color-accent) !important;
+}
+
+.errorText {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    font-weight: var(--weight-semibold);
+}
+
+/* Sidebar summaries */
+.summaryPanel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    position: sticky;
+    top: calc(var(--navbar-height-lg) + var(--space-lg));
+    align-self: flex-start;
+}
+
+.summaryTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1;
+}
+
+.summaryList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.summaryItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+.itemMainInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.itemNameText {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.itemSpecs {
+    display: block;
+    font-size: var(--text-2xs);
+    color: var(--color-muted);
+    margin-top: 1px;
+}
+
+.itemSubprice {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    white-space: nowrap;
+}
+
+.summaryDivider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-md) 0;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--text-sm);
+    color: var(--color-text-2);
+    margin-bottom: var(--space-xs);
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-lg);
+}
+
+/* Pay trigger button */
+.submitBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 15px var(--space-xl);
+    background: var(--color-primary);
+    color: white;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition:
+        background var(--motion-fast) var(--ease-standard),
+        transform var(--motion-fast) var(--ease-spring),
+        box-shadow var(--motion-normal) var(--ease-standard);
+    box-shadow: var(--shadow-sm);
+}
+
+.submitBtn:hover:not(:disabled) {
+    background: #1a1a1a;
+    box-shadow: var(--shadow-lg);
+}
+
+.submitBtn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.submitBtn:disabled {
+    background: var(--color-border) !important;
+    color: var(--color-muted) !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.trustStrip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+    font-size: var(--text-2xs);
+    color: var(--color-muted);
+}
+
+.trustIcon {
+    color: var(--success);
+    flex-shrink: 0;
+}
+
+/* ── Success view state panel ─────────────────────── */
+.successWrapper {
+    text-align: center;
+    max-width: 480px;
+    margin: var(--space-4xl) auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-3xl) var(--space-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.successIconBox {
+    width: 68px;
+    height: 68px;
+    border-radius: var(--radius-full);
+    background: var(--success-light);
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-xl);
+}
+
+.successTitle {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-sm);
+    letter-spacing: var(--tracking-tight);
+}
+
+.successDesc {
+    font-size: var(--text-sm);
+    color: var(--color-text-2);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-2xl);
+}
+
+.successActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.successBtn {
+    padding: 13px 24px;
+    background: var(--color-primary);
+    color: white;
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    transition: background var(--motion-fast) var(--ease-standard);
+}
+
+.successBtn:hover {
+    background: #1a1a1a;
+}
+
+.successBtnOutline {
+    padding: 12px 24px;
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+}
+
+.successBtnOutline:hover {
+    border-color: var(--color-border-dark);
+    background: var(--color-background);
+}
+
+/* ── Responsive breakpoints ────────────────── */
+@media (min-width: 580px) {
+    .formGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .page {
+        padding: var(--space-2xl) var(--space-xl) var(--space-5xl);
+    }
+
+    .layout {
+        grid-template-columns: 1fr 340px;
+        gap: var(--space-3xl);
+    }
+}
+
+@media (min-width: 1024px) {
+    .layout {
+        grid-template-columns: 1fr 380px;
+        gap: var(--space-4xl);
+    }
+}

@@ -1,0 +1,180 @@
+/* ===================================================
+   JERSEYSTORE — DESIGN TOKENS  (Phase 1 — v2)
+   ================================================= */
+
+:root {
+
+  /* ── Brand Colors ─────────────────────────────── */
+  --color-primary: #0A0A0A;
+  --color-background: #F7F7F5;
+  --color-surface: #FFFFFF;
+  --color-accent: #E63946;
+  --color-accent-hover: #C8303C;
+  --color-accent-light: rgba(230, 57, 70, 0.08);
+  --color-accent-glow: rgba(230, 57, 70, 0.20);
+  --color-text: #111111;
+  --color-text-2: #3D3D3D;
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --color-border-dark: #D1D5DB;
+
+  /* Semantic aliases (keeps old code working) */
+  --primary: var(--color-primary);
+  --secondary: var(--color-surface);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --accent-light: var(--color-accent-light);
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --text: var(--color-text);
+  --text-secondary: var(--color-text-2);
+  --muted: var(--color-muted);
+  --border: var(--color-border);
+  --border-dark: var(--color-border-dark);
+
+  /* Status colors */
+  --success: #16a34a;
+  --success-light: rgba(22, 163, 74, 0.08);
+  --danger: #dc2626;
+  --danger-light: rgba(220, 38, 38, 0.08);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.08);
+  --info: #3b82f6;
+  --info-light: rgba(59, 130, 246, 0.08);
+
+  /* Dark surface for hero / banner overlays */
+  --surface-dark: #0A0A0A;
+  --surface-dark-mid: rgba(10, 10, 10, 0.72);
+  --surface-dark-soft: rgba(10, 10, 10, 0.42);
+
+  /* ── Layout ───────────────────────────────────── */
+  --container-width: 1280px;
+  --container-narrow: 960px;
+  --container-wide: 1480px;
+  --sidebar-width: 260px;
+  --navbar-height: 68px;
+  --navbar-height-lg: 76px;
+
+  /* ── Spacing Scale ────────────────────────────── */
+  --space-2xs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+  --space-5xl: 128px;
+
+  /* ── Border Radius ────────────────────────────── */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* ── Elevation / Shadows ──────────────────────── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.16);
+  --shadow-2xl: 0 40px 80px rgba(0, 0, 0, 0.22);
+  --shadow-accent: 0 8px 24px var(--color-accent-glow);
+  --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* ── Typography: Families ─────────────────────── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Typography: Fluid Size Scale ────────────── */
+  --text-2xs: clamp(0.5625rem, 0.53rem + 0.1vw, 0.625rem);
+  --text-xs: clamp(0.6875rem, 0.65rem + 0.1vw, 0.75rem);
+  --text-sm: clamp(0.8125rem, 0.78rem + 0.1vw, 0.875rem);
+  --text-base: clamp(0.875rem, 0.85rem + 0.15vw, 1rem);
+  --text-lg: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  --text-xl: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+  --text-2xl: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --text-3xl: clamp(1.5rem, 1.2rem + 0.8vw, 1.875rem);
+  --text-4xl: clamp(1.875rem, 1.4rem + 1.2vw, 2.5rem);
+  --text-5xl: clamp(2.25rem, 1.5rem + 2vw, 3.25rem);
+  --text-6xl: clamp(2.75rem, 1.8rem + 2.5vw, 4rem);
+  --text-7xl: clamp(3.5rem, 2rem + 4vw, 5.5rem);
+  --text-8xl: clamp(4.5rem, 2.5rem + 5.5vw, 7.5rem);
+
+  /* ── Typography: Line Heights ─────────────────── */
+  --leading-none: 1;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+  --leading-loose: 2;
+
+  /* ── Typography: Letter Spacing ──────────────── */
+  --tracking-tightest: -0.04em;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.12em;
+  --tracking-ultra: 0.18em;
+
+  /* ── Typography: Font Weights ─────────────────── */
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+  --weight-black: 900;
+
+  /* ══════════════════════════════════════════════
+     MOTION SYSTEM
+     ══════════════════════════════════════════════ */
+
+  /* ── Duration Tokens ──────────────────────────── */
+  --motion-instant: 80ms;
+  --motion-fast: 180ms;
+  --motion-normal: 350ms;
+  --motion-slow: 700ms;
+  --motion-slower: 1000ms;
+  --motion-slowest: 1400ms;
+
+  /* ── Easing Tokens ────────────────────────────── */
+  --ease-linear: linear;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Material standard */
+  --ease-decel: cubic-bezier(0, 0, 0.2, 1);
+  /* Entering elements  */
+  --ease-accel: cubic-bezier(0.4, 0, 1, 1);
+  /* Leaving elements   */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Springy overshoot  */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Expo out — snappy  */
+  --ease-back: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Back cubic     */
+  --ease-cinematic: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* ── Composed Transition Helpers ─────────────── */
+  --transition-fast: var(--motion-fast) var(--ease-standard);
+  --transition: var(--motion-normal) var(--ease-standard);
+  --transition-slow: var(--motion-slow) var(--ease-decel);
+  --transition-spring: var(--motion-normal) var(--ease-spring);
+  --transition-expo: var(--motion-slow) var(--ease-expo);
+
+  /* ── Z-Index Scale ────────────────────────────── */
+  --z-below: -1;
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-top: 600;
+}

@@ -1,0 +1,553 @@
+/* ================================================
+   NAVBAR  — Premium redesign (Phase 2)
+   ================================================ */
+
+/* ── Root bar ─────────────────────────────────── */
+.navbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-sticky);
+    background: rgba(247, 247, 245, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid transparent;
+    transition:
+        background var(--motion-normal) var(--ease-standard),
+        border-color var(--motion-normal) var(--ease-standard),
+        box-shadow var(--motion-normal) var(--ease-standard),
+        height var(--motion-normal) var(--ease-standard);
+    will-change: background, box-shadow;
+}
+
+.navbar.scrolled {
+    background: rgba(247, 247, 245, 0.96);
+    border-bottom-color: var(--color-border);
+    box-shadow: 0 1px 24px rgba(0, 0, 0, 0.07);
+}
+
+/* ── Inner layout ─────────────────────────────── */
+.navbarInner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--navbar-height);
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+    transition: height var(--motion-normal) var(--ease-standard);
+}
+
+.navbar.scrolled .navbarInner {
+    height: calc(var(--navbar-height) - 8px);
+}
+
+/* ── Logo ─────────────────────────────────────── */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+    font-weight: var(--weight-black);
+    letter-spacing: -0.03em;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+    flex-shrink: 0;
+}
+
+.logo:hover {
+    opacity: 0.8;
+}
+
+.logoAccent {
+    color: var(--color-accent);
+}
+
+/* thin decorative divider between JERSEY and STORE */
+.logoDot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    background: var(--color-accent);
+    border-radius: 50%;
+    margin: 0 4px 2px;
+    flex-shrink: 0;
+}
+
+/* ── Desktop Nav Links ────────────────────────── */
+.navLinks {
+    display: none;
+    align-items: center;
+    gap: var(--space-xs);
+    list-style: none;
+}
+
+.navLink {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-muted);
+    transition: color var(--motion-fast) var(--ease-standard);
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+}
+
+.navLink:hover {
+    color: var(--color-text);
+}
+
+.navLink.active {
+    color: var(--color-text);
+}
+
+/* Animated underline indicator */
+.navLink::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: var(--color-accent);
+    border-radius: var(--radius-full);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--motion-normal) var(--ease-expo);
+}
+
+.navLink:hover::after,
+.navLink.active::after {
+    transform: scaleX(1);
+}
+
+/* Category pill — slightly different treatment */
+.navLinkCategory {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+}
+
+/* ── Nav Actions (search, wishlist, cart, user) ── */
+.navActions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.navAction {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text);
+    transition:
+        background var(--motion-fast) var(--ease-standard),
+        color var(--motion-fast) var(--ease-standard),
+        transform var(--motion-fast) var(--ease-spring);
+    text-decoration: none;
+}
+
+.navAction:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-accent);
+    transform: translateY(-1px);
+}
+
+.navAction:active {
+    transform: scale(0.93);
+}
+
+/* Cart badge */
+.cartBadge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent);
+    color: white;
+    font-size: 9px;
+    font-weight: var(--weight-black);
+    border-radius: var(--radius-full);
+    line-height: 1;
+    pointer-events: none;
+    animation: badgePop 0.3s var(--ease-spring) both;
+}
+
+@keyframes badgePop {
+    0% {
+        transform: scale(0);
+    }
+
+    70% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ── Search Button ────────────────────────────── */
+.searchBtn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 8px 14px;
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition:
+        border-color var(--motion-fast) var(--ease-standard),
+        background var(--motion-fast) var(--ease-standard),
+        color var(--motion-fast) var(--ease-standard);
+    white-space: nowrap;
+}
+
+.searchBtn:hover {
+    border-color: var(--color-text);
+    color: var(--color-text);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.searchShortcut {
+    display: none;
+    padding: 2px 6px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--color-muted);
+}
+
+/* ── Mobile Menu Toggle ───────────────────────── */
+.menuToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-text);
+    border-radius: var(--radius-md);
+    transition:
+        background var(--motion-fast) var(--ease-standard),
+        transform var(--motion-fast) var(--ease-spring);
+}
+
+.menuToggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.menuToggle:active {
+    transform: scale(0.9);
+}
+
+/* ── Mobile Menu Overlay ──────────────────────── */
+.mobileMenu {
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-surface);
+    z-index: var(--z-overlay);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+        opacity var(--motion-normal) var(--ease-expo),
+        transform var(--motion-normal) var(--ease-expo);
+}
+
+.mobileMenu.open {
+    pointer-events: all;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mobileMenuInner {
+    padding: var(--space-lg) var(--space-md);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Section headings inside mobile nav */
+.mobileSectionLabel {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-widest);
+    color: var(--color-muted);
+    padding: var(--space-md) var(--space-md) var(--space-sm);
+}
+
+.mobileLink {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 13px var(--space-md);
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+    color: var(--color-text);
+    border-radius: var(--radius-md);
+    transition:
+        background var(--motion-fast) var(--ease-standard),
+        color var(--motion-fast) var(--ease-standard),
+        transform var(--motion-fast) var(--ease-spring);
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.mobileLink:hover,
+.mobileLink.active {
+    background: var(--color-background);
+    color: var(--color-accent);
+}
+
+.mobileLink:active {
+    transform: scale(0.98);
+}
+
+/* Stagger links in mobile menu */
+.mobileMenu.open .mobileLink:nth-child(1) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 0ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(2) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 40ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(3) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 80ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(4) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 120ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(5) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 160ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(6) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 200ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(7) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 240ms both;
+}
+
+.mobileMenu.open .mobileLink:nth-child(8) {
+    animation: mobileItemIn 0.32s var(--ease-expo) 280ms both;
+}
+
+@keyframes mobileItemIn {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.mobileDivider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-sm) var(--space-md);
+}
+
+/* ── Search Overlay ───────────────────────────── */
+.searchOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-top);
+    background: white;
+    box-shadow: var(--shadow-xl);
+    transform-origin: top center;
+    transform: scaleY(0);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        transform var(--motion-normal) var(--ease-expo),
+        opacity var(--motion-fast) var(--ease-standard);
+}
+
+.searchOverlay.open {
+    transform: scaleY(1);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.searchOverlayInner {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-md);
+}
+
+.searchInputRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.searchInputField {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+    background: none;
+    border: none;
+    outline: none;
+    letter-spacing: var(--tracking-tight);
+}
+
+.searchInputField::placeholder {
+    color: var(--color-border-dark);
+}
+
+.searchClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--color-muted);
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+    transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.searchClose:hover {
+    color: var(--color-text);
+}
+
+.searchTrending {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.searchTrendingLabel {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-widest);
+    color: var(--color-muted);
+    width: 100%;
+    margin-bottom: var(--space-xs);
+}
+
+.searchChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+        background var(--motion-fast) var(--ease-standard),
+        border-color var(--motion-fast) var(--ease-standard);
+    text-decoration: none;
+}
+
+.searchChip:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (min-width: 768px) {
+    .navbarInner {
+        height: var(--navbar-height-lg);
+        padding: 0 var(--space-xl);
+    }
+
+    .navbar.scrolled .navbarInner {
+        height: calc(var(--navbar-height-lg) - 8px);
+    }
+
+    .navLinks {
+        display: flex;
+    }
+
+    .menuToggle {
+        display: none;
+    }
+
+    .mobileMenu {
+        display: none !important;
+    }
+
+    .searchShortcut {
+        display: inline-flex;
+    }
+
+    .searchOverlayInner {
+        padding: var(--space-2xl) var(--space-xl);
+    }
+}
+
+@media (min-width: 1024px) {
+    .searchBtn {
+        display: flex;
+    }
+}
+
+@media (min-width: 1280px) {
+    .navbarInner {
+        padding: 0 var(--space-2xl);
+    }
+
+    .logo {
+        font-size: 1.4rem;
+    }
+}

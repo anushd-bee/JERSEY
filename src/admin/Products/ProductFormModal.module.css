@@ -1,0 +1,184 @@
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.colSpan2 {
+    grid-column: 1 / -1;
+}
+
+/* Sizes */
+.sizeGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+}
+
+.sizeBtn {
+    padding: 8px 16px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--background);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sizeBtn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sizeBtnActive {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+/* Image upload */
+.uploadArea {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+    margin-top: var(--space-xs);
+}
+
+.uploadArea:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+.hiddenInput {
+    display: none;
+}
+
+.previewGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.previewItem {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.previewImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.removeImg {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background var(--transition-fast);
+}
+
+.removeImg:hover {
+    background: var(--danger);
+}
+
+.newBadge {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 8px;
+    font-weight: var(--weight-bold);
+    background: var(--accent);
+    color: white;
+    padding: 1px 4px;
+    border-radius: 2px;
+    line-height: 1.4;
+}
+
+/* Toggle */
+.toggleRow {
+    display: flex;
+    gap: var(--space-xl);
+    align-items: center;
+    grid-column: 1 / -1;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle input[type="checkbox"] {
+    display: none;
+}
+
+.toggleTrack {
+    width: 36px;
+    height: 20px;
+    background: var(--border-dark);
+    border-radius: var(--radius-full);
+    position: relative;
+    transition: background var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.toggleTrack::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    transition: transform var(--transition-fast);
+}
+
+.toggle input[type="checkbox"]:checked+.toggleTrack {
+    background: var(--accent);
+}
+
+.toggle input[type="checkbox"]:checked+.toggleTrack::after {
+    transform: translateX(16px);
+}
+
+/* Submit spinner */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 0.7s linear infinite;
+}

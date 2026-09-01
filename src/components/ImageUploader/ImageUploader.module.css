@@ -1,0 +1,269 @@
+/* ================================================
+   IMAGE UPLOADER — Premium admin upload UI
+   ================================================ */
+
+.uploader {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.labelRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.countBadge {
+    font-size: 11px;
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    background: var(--color-background);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+/* ── Drop Zone ───────────────────────── */
+.dropZone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xl) var(--space-lg);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-background);
+    cursor: pointer;
+    transition:
+        border-color 200ms ease,
+        background 200ms ease,
+        transform 200ms ease;
+    text-align: center;
+}
+
+.dropZone:hover {
+    border-color: var(--color-accent);
+    background: rgba(var(--accent-rgb, 0, 0, 0), 0.02);
+}
+
+.dropZoneActive {
+    border-color: var(--color-accent) !important;
+    background: rgba(var(--accent-rgb, 0, 0, 0), 0.04) !important;
+    transform: scale(1.01);
+}
+
+.dropZoneIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-muted);
+    transition: color 200ms ease, border-color 200ms ease;
+}
+
+.dropZone:hover .dropZoneIcon {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.dropZoneTitle {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+}
+
+.dropZoneSub {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+}
+
+.browseLink {
+    color: var(--color-accent);
+    font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.dropZoneHint {
+    font-size: 11px;
+    color: var(--color-border-dark);
+}
+
+.hiddenInput {
+    display: none;
+}
+
+/* ── Errors ───────────────────────────── */
+.errorList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.errorItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.06);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+}
+
+/* ── Preview Grid ─────────────────────── */
+.previewGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+}
+
+.previewCard {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 2px solid var(--color-border);
+    transition:
+        border-color 200ms ease,
+        box-shadow 200ms ease;
+    background: #ffffff;
+}
+
+.previewCard:hover {
+    border-color: var(--color-border-dark);
+}
+
+.previewCardPrimary {
+    border-color: var(--color-accent) !important;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 0, 0, 0), 0.1);
+}
+
+/* 1:1 square image preview — contain, not cover */
+.previewImageWrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.previewImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+}
+
+/* Action buttons row */
+.previewActions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.previewCard:hover .previewActions {
+    opacity: 1;
+}
+
+.primaryBtn,
+.removeBtn {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition:
+        background 150ms ease,
+        color 150ms ease,
+        transform 150ms ease;
+}
+
+.primaryBtn {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--color-muted);
+    backdrop-filter: blur(4px);
+}
+
+.primaryBtn:hover {
+    color: var(--color-accent);
+    transform: scale(1.1);
+}
+
+.primaryBtnActive {
+    color: var(--color-accent) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    opacity: 1 !important;
+}
+
+/* Always show the active primary star */
+.previewCardPrimary .previewActions {
+    opacity: 1;
+}
+
+.removeBtn {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+.removeBtn:hover {
+    background: var(--danger);
+    transform: scale(1.1);
+}
+
+/* Badges */
+.newBadge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    font-size: 8px;
+    font-weight: var(--weight-black);
+    background: var(--color-accent);
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+}
+
+.primaryLabel {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    font-size: 8px;
+    font-weight: var(--weight-bold);
+    color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
+}
+
+/* Tip */
+.tip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 11px;
+    color: var(--color-muted);
+    padding: 4px 0;
+}
+
+.tip svg {
+    color: var(--color-accent);
+    flex-shrink: 0;
+}

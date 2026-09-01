@@ -1,0 +1,104 @@
+.titleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.backLink:hover {
+    color: var(--accent);
+}
+
+.orderId {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-normal);
+    color: var(--muted);
+}
+
+.statusControl {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+/* Two-column layout: items (wide) + sidebar stack */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: 1fr 320px;
+        align-items: start;
+    }
+}
+
+.orderTotal {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    color: var(--accent);
+}
+
+/* Product cell in order items table */
+.productCell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.productThumb {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    object-fit: contain;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* Sidebar stack */
+.sideStack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Info panel body */
+.infoBody {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.infoRow {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    font-size: var(--text-sm);
+    align-items: flex-start;
+}
+
+.infoLabel {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+    flex-shrink: 0;
+    padding-top: 2px;
+}

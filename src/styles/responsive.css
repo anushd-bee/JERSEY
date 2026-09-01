@@ -1,0 +1,151 @@
+/* ===================================================
+   JERSEYSTORE — RESPONSIVE UTILITIES  (Phase 1 — v2)
+   Mobile-first approach
+   =================================================
+
+   Breakpoints:
+   --bp-xs:  320px  (small phones)
+   --bp-sm:  375px  (standard phones)
+   --bp-md:  425px  (large phones)
+   --bp-tab: 768px  (tablets)
+   --bp-lg:  1024px (small desktops / landscape tablets)
+   --bp-xl:  1280px (desktops)
+   --bp-2xl: 1440px (wide screens)
+   =================================================== */
+
+/* ── Container ─────────────────────────────────── */
+.container {
+    width: 100%;
+    max-width: var(--container-width);
+    margin-inline: auto;
+    padding-inline: var(--space-md);
+}
+
+.container--narrow {
+    max-width: var(--container-narrow);
+}
+
+.container--wide {
+    max-width: var(--container-wide);
+}
+
+.container--full {
+    max-width: none;
+}
+
+/* ── Responsive Grid ───────────────────────────── */
+.grid {
+    display: grid;
+    gap: var(--space-lg);
+}
+
+.grid--2 {
+    grid-template-columns: 1fr;
+}
+
+.grid--3 {
+    grid-template-columns: 1fr;
+}
+
+.grid--4 {
+    grid-template-columns: 1fr;
+}
+
+/* ── Visibility Helpers (mobile-first) ─────────── */
+.hide-mobile {
+    display: none;
+}
+
+.show-mobile {
+    display: block;
+}
+
+.show-mobile-flex {
+    display: flex;
+}
+
+/* ── 375px ─────────────────────────────────────── */
+@media (min-width: 375px) {
+    .container {
+        padding-inline: var(--space-md);
+    }
+}
+
+/* ── 425px (2-column grid starts) ─────────────── */
+@media (min-width: 425px) {
+    .grid--2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ── 768px (tablet) ────────────────────────────── */
+@media (min-width: 768px) {
+    .container {
+        padding-inline: var(--space-xl);
+    }
+
+    .grid--2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid--3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid--4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hide-mobile {
+        display: block;
+    }
+
+    .hide-mobile-flex {
+        display: flex;
+    }
+
+    .show-mobile-only {
+        display: none;
+    }
+
+    .section {
+        padding-block: calc(var(--space-3xl) * 1.2);
+    }
+
+    .section--lg {
+        padding-block: calc(var(--space-4xl) * 1.1);
+    }
+
+    .section--xl {
+        padding-block: calc(var(--space-5xl) * 1.1);
+    }
+}
+
+/* ── 1024px (small desktop) ────────────────────── */
+@media (min-width: 1024px) {
+    .grid--3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid--4 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── 1280px (desktop) ──────────────────────────── */
+@media (min-width: 1280px) {
+    .container {
+        padding-inline: var(--space-2xl);
+    }
+
+    .grid--4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ── 1440px (wide screen) ──────────────────────── */
+@media (min-width: 1440px) {
+    .container {
+        padding-inline: var(--space-3xl);
+    }
+}
