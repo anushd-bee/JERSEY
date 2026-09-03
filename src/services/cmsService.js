@@ -6,6 +6,14 @@ function normalizeError(error) {
     return { message };
 }
 
+const HOMEPAGE_SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
+
+function withoutCmsMetadata(record) {
+    return Object.fromEntries(
+        Object.entries(record).filter(([key]) => !['id', 'created_at', 'updated_at'].includes(key))
+    );
+}
+
 export const cmsService = {
     async getHeroSlides() {
         try {
@@ -75,7 +83,7 @@ export const cmsService = {
             const { data, error } = await supabase
                 .from('homepage_settings')
                 .upsert({
-                    id: 'default',
+                    id: HOMEPAGE_SETTINGS_ID,
                     settings,
                     updated_at: new Date().toISOString(),
                 }, { onConflict: 'id' })
@@ -119,7 +127,7 @@ export const cmsService = {
         try {
             const { data, error } = await supabase
                 .from('homepage_hero_slides')
-                .insert(slide)
+                .insert(withoutCmsMetadata(slide))
                 .select()
                 .single();
 
@@ -140,7 +148,7 @@ export const cmsService = {
         try {
             const { data, error } = await supabase
                 .from('homepage_hero_slides')
-                .update({ ...updates, updated_at: new Date().toISOString() })
+                .update({ ...withoutCmsMetadata(updates), updated_at: new Date().toISOString() })
                 .eq('id', id)
                 .select()
                 .single();
@@ -166,7 +174,7 @@ export const cmsService = {
         try {
             const { data, error } = await supabase
                 .from('announcement_items')
-                .insert(item)
+                .insert(withoutCmsMetadata(item))
                 .select()
                 .single();
 
@@ -187,7 +195,7 @@ export const cmsService = {
         try {
             const { data, error } = await supabase
                 .from('announcement_items')
-                .update(updates)
+                .update({ ...withoutCmsMetadata(updates), updated_at: new Date().toISOString() })
                 .eq('id', id)
                 .select()
                 .single();
