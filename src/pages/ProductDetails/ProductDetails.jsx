@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     ChevronRight,
     Heart,
@@ -15,7 +15,7 @@ import { productService } from '../../services/productService';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { formatPrice, SIZES } from '../../utils/helpers';
+import { formatPrice } from '../../utils/helpers';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import ProductGallery from '../../components/ProductGallery/ProductGallery';
 import { PageLoader } from '../../components/Loading/Loading';
@@ -23,7 +23,8 @@ import useScrollReveal from '../../hooks/useScrollReveal';
 import styles from './ProductDetails.module.css';
 
 export default function ProductDetails() {
-    const { slug } = useParams();
+    const { slug: identifier } = useParams();
+    const navigate = useNavigate();
     const { addItem } = useCart();
     const { user } = useAuth();
     const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlist();
@@ -31,7 +32,8 @@ export default function ProductDetails() {
     const [product, setProduct] = useState(null);
     const [related, setRelated] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedSize, setSelectedSize] = useState('M');
+    const [loadError, setLoadError] = useState('');
+    const [selectedSize, setSelectedSize] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [scrolledPast, setScrolledPast] = useState(false);
@@ -43,34 +45,46 @@ export default function ProductDetails() {
     useScrollReveal(containerRef);
 
     useEffect(() => {
+        let active = true;
         async function load() {
             setLoading(true);
+            setLoadError('');
+            setProduct(null);
             try {
-                const { data, error } = await productService.getBySlug(slug);
-                if (error) {
-                    const { data: d2 } = await productService.getById(slug);
-                    setProduct(d2);
-                    if (d2?.category_id) {
-                        const { data: rel } = await productService.getRelated(d2.id, d2.category_id);
-                        setRelated(rel || []);
-                    }
+                const request = productService.getPublicByIdentifier(identifier);
+                const timeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Product request timed out.')), 12000);
+                });
+                const { data, error } = await Promise.race([request, timeout]);
+                if (!active) return;
+                if (error) throw error;
+                setProduct(data || null);
+                setSelectedSize(data?.sizes?.length ? data.sizes[0] : null);
+
+                if (data?.category_id) {
+                    const { data: rel, error: relatedError } = await productService.getRelated(data.id, data.category_id);
+                    if (!active) return;
+                    if (relatedError) console.error('Related products unavailable:', relatedError);
+                    setRelated(rel || []);
                 } else {
-                    setProduct(data);
-                    if (data?.category_id) {
-                        const { data: rel } = await productService.getRelated(data.id, data.category_id);
-                        setRelated(rel || []);
-                    }
+                    setRelated([]);
                 }
             } catch (err) {
-                console.error(err);
+                if (active) {
+                    console.error('Product details load error:', err);
+                    setLoadError('We could not load this product right now. Please try again shortly.');
+                }
             } finally {
-                setLoading(false);
-                setQuantity(1);
+                if (active) {
+                    setLoading(false);
+                    setQuantity(1);
+                }
             }
         }
         load();
         window.scrollTo(0, 0);
-    }, [slug]);
+        return () => { active = false; };
+    }, [identifier]);
 
     /* Handle intersection observer to show/hide sticky bottom buy-panel on mobile */
     useEffect(() => {
@@ -94,9 +108,9 @@ export default function ProductDetails() {
         return (
             <div className={styles.notFoundPage}>
                 <div className={styles.notFoundBox}>
-                    <h2 className={styles.notFoundTitle}>Jersey Not Found</h2>
+                    <h2 className={styles.notFoundTitle}>{loadError ? 'Unable to Load Jersey' : 'Jersey Not Found'}</h2>
                     <p className={styles.notFoundDesc}>
-                        The jersey variant you are looking for does not exist or has been removed.
+                        {loadError || 'The jersey variant you are looking for does not exist, is inactive, or has been removed.'}
                     </p>
                     <Link to="/shop" className={styles.notFoundBtn}>
                         Explore Shop
@@ -106,7 +120,12 @@ export default function ProductDetails() {
         );
     }
 
-    const images = product.images || (product.image ? [product.image] : []);
+    const images = [
+        ...(Array.isArray(product.images) ? product.images : []),
+        ...(product.image ? [product.image] : []),
+    ].filter(Boolean);
+    const sizes = Array.isArray(product.sizes) ? product.sizes.filter(Boolean) : [];
+    const outOfStock = Number(product.stock) <= 0;
     const discountPercent =
         product.compare_price && product.compare_price > product.price
             ? Math.round(
@@ -115,9 +134,16 @@ export default function ProductDetails() {
             : 0;
 
     function handleAddToCart() {
+        if (outOfStock || (sizes.length > 0 && !selectedSize)) return;
         addItem(product, selectedSize, quantity);
         setAdded(true);
         setTimeout(() => setAdded(false), 1200);
+    }
+
+    function handleBuyNow() {
+        if (outOfStock || (sizes.length > 0 && !selectedSize)) return;
+        addItem(product, selectedSize, quantity);
+        navigate('/checkout');
     }
 
     function handleWishlist() {
@@ -186,10 +212,10 @@ export default function ProductDetails() {
                     <div className={styles.sectionContainer}>
                         <div className={styles.sectionHeader}>
                             <span className={styles.sectionTitle}>Select Size</span>
-                            <span className={styles.selectedLabel}>{selectedSize}</span>
+                            <span className={styles.selectedLabel}>{sizes.length > 0 ? (selectedSize || 'Choose a size') : 'One size'}</span>
                         </div>
-                        <div className={styles.sizes}>
-                            {(product.sizes || SIZES).map(size => (
+                        {sizes.length > 0 && <div className={styles.sizes}>
+                            {sizes.map(size => (
                                 <button
                                     key={size}
                                     className={`${styles.sizeBtn} ${selectedSize === size ? styles.sizeActive : ''}`}
@@ -199,7 +225,7 @@ export default function ProductDetails() {
                                     {size}
                                 </button>
                             ))}
-                        </div>
+                        </div>}
                     </div>
 
                     {/* Quantity Picker */}
@@ -231,7 +257,7 @@ export default function ProductDetails() {
                         <button
                             className={`${styles.addToCart} ${added ? styles.addToCartAdded : ''}`}
                             onClick={handleAddToCart}
-                            disabled={added}
+                            disabled={added || outOfStock || (sizes.length > 0 && !selectedSize)}
                         >
                             {added ? (
                                 <>
@@ -241,9 +267,16 @@ export default function ProductDetails() {
                             ) : (
                                 <>
                                     <ShoppingBag size={18} strokeWidth={2} />
-                                    Add to Cart
+                                    {outOfStock ? 'Out of Stock' : sizes.length > 0 && !selectedSize ? 'Select a Size' : 'Add to Cart'}
                                 </>
                             )}
+                        </button>
+                        <button
+                            className={styles.buyNowBtn}
+                            onClick={handleBuyNow}
+                            disabled={outOfStock || (sizes.length > 0 && !selectedSize)}
+                        >
+                            Buy Now
                         </button>
                         {user && (
                             <button
@@ -320,7 +353,7 @@ export default function ProductDetails() {
                     <button
                         className={`${styles.stickyBtn} ${added ? styles.stickyBtnAdded : ''}`}
                         onClick={handleAddToCart}
-                        disabled={added}
+                        disabled={added || outOfStock || (sizes.length > 0 && !selectedSize)}
                     >
                         {added ? (
                             <>
@@ -330,7 +363,7 @@ export default function ProductDetails() {
                         ) : (
                             <>
                                 <ShoppingBag size={16} strokeWidth={2} />
-                                Add ({selectedSize})
+                                {outOfStock ? 'Out of Stock' : `Add${selectedSize ? ` (${selectedSize})` : ''}`}
                             </>
                         )}
                     </button>

@@ -71,11 +71,37 @@ export const productService = {
         return { data, error };
     },
 
+    async getPublicByIdentifier(identifier) {
+        if (!identifier) return { data: null, error: null };
+
+        const { data: slugProduct, error: slugError } = await supabase
+            .from('products')
+            .select('*, categories(name, slug)')
+            .eq('slug', identifier)
+            .eq('is_active', true)
+            .maybeSingle();
+
+        if (slugError) return { data: null, error: slugError };
+        if (slugProduct) return { data: slugProduct, error: null };
+
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidPattern.test(identifier)) return { data: null, error: null };
+
+        const { data, error } = await supabase
+            .from('products')
+            .select('*, categories(name, slug)')
+            .eq('id', identifier)
+            .eq('is_active', true)
+            .maybeSingle();
+        return { data, error };
+    },
+
     async getById(id) {
         const { data, error } = await supabase
             .from('products')
             .select('*, categories(name, slug)')
             .eq('id', id)
+            .eq('is_active', true)
             .single();
         return { data, error };
     },

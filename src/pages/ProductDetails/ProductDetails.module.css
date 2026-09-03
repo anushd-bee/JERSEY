@@ -522,3 +522,41 @@
         gap: var(--space-4xl);
     }
 }
+
+.buyNowBtn {
+    min-width: 120px;
+    padding: 16px var(--space-lg);
+    background: var(--color-accent);
+    color: white;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-spring);
+}
+
+.buyNowBtn:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-2px);
+}
+
+.buyNowBtn:disabled,
+.addToCart:disabled,
+.stickyBtn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+    .ctaWrapper {
+        flex-wrap: wrap;
+    }
+
+    .addToCart,
+    .buyNowBtn {
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+}

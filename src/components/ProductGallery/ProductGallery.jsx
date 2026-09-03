@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import styles from './ProductGallery.module.css';
 
@@ -14,6 +14,19 @@ import styles from './ProductGallery.module.css';
 export default function ProductGallery({ images = [], alt = 'Product', discount = 0 }) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [transitioning, setTransitioning] = useState(false);
+    const [failedImages, setFailedImages] = useState({});
+
+    const validImages = images.filter(image => image && !failedImages[image]);
+    const imageKey = images.join('|');
+
+    useEffect(() => {
+        setActiveIndex(0);
+        setFailedImages({});
+    }, [imageKey]);
+
+    useEffect(() => {
+        if (activeIndex >= validImages.length) setActiveIndex(0);
+    }, [activeIndex, validImages.length]);
 
     const handleThumbnailClick = useCallback((index) => {
         if (index === activeIndex) return;
@@ -27,7 +40,7 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
 
     const LABELS = ['Primary', 'Front', 'Back', 'Side', 'Detail'];
 
-    if (images.length === 0) {
+    if (validImages.length === 0) {
         return (
             <div className={styles.gallery}>
                 <div className={styles.mainWrapper}>
@@ -44,10 +57,11 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
             {/* Main Image */}
             <div className={styles.mainWrapper}>
                 <img
-                    src={images[activeIndex]}
+                    src={validImages[activeIndex]}
                     alt={`${alt} — ${LABELS[activeIndex] || `Image ${activeIndex + 1}`}`}
                     className={`${styles.mainImage} ${transitioning ? styles.mainImageFading : ''}`}
                     draggable={false}
+                    onError={() => setFailedImages(prev => ({ ...prev, [validImages[activeIndex]]: true }))}
                 />
                 {discount > 0 && (
                     <span className={styles.badgeSale}>
@@ -57,9 +71,9 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
             </div>
 
             {/* Thumbnails */}
-            {images.length > 1 && (
+            {validImages.length > 1 && (
                 <div className={styles.thumbStrip} role="listbox" aria-label="Product thumbnails">
-                    {images.map((img, i) => (
+                    {validImages.map((img, i) => (
                         <button
                             key={i}
                             className={`${styles.thumb} ${i === activeIndex ? styles.thumbActive : ''}`}
@@ -73,6 +87,7 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
                                 alt=""
                                 aria-hidden="true"
                                 draggable={false}
+                                onError={() => setFailedImages(prev => ({ ...prev, [img]: true }))}
                             />
                             {i === 0 && (
                                 <span className={styles.thumbPrimaryBadge}>★</span>
