@@ -101,6 +101,7 @@ export default function AdminProducts() {
                                 <th>Category</th>
                                 <th>Price</th>
                                 <th>Stock</th>
+                                <th>Featured</th>
                                 <th>Status</th>
                                 <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
@@ -139,6 +140,11 @@ export default function AdminProducts() {
                                     <td style={{ fontWeight: 600 }}>{formatPrice(product.price)}</td>
                                     <td style={{ color: product.stock === 0 ? 'var(--danger)' : 'var(--text)' }}>
                                         {product.stock ?? '—'}
+                                    </td>
+                                    <td>
+                                        <span className={`badge badge--${product.is_featured ? 'success' : 'default'}`}>
+                                            {product.is_featured ? 'Featured' : 'Standard'}
+                                        </span>
                                     </td>
                                     <td>
                                         <span className={`badge badge--${product.is_active ? 'success' : 'default'}`}>

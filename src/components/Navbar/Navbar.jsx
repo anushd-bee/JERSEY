@@ -109,8 +109,6 @@ export default function Navbar() {
     const linkClass = ({ isActive }) =>
         `${styles.navLink} ${isActive ? styles.active : ''}`;
 
-    const linkClassCat = ({ isActive }) =>
-        `${styles.navLink} ${styles.navLinkCategory} ${isActive ? styles.active : ''}`;
 
     const mobileLinkClass = ({ isActive }) =>
         `${styles.mobileLink} ${isActive ? styles.active : ''}`;
@@ -138,13 +136,7 @@ export default function Navbar() {
                             <NavLink to="/shop" className={linkClass}>Shop</NavLink>
                         </li>
                         <li>
-                            <NavLink to="/shop?category=football" className={linkClassCat}>Football</NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/shop?category=basketball" className={linkClassCat}>Basketball</NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/shop?category=cricket" className={linkClassCat}>Cricket</NavLink>
+                            <NavLink to="/offer" className={linkClass}>Offer</NavLink>
                         </li>
                     </ul>
 
@@ -214,18 +206,10 @@ export default function Navbar() {
                             Home
                         </NavLink>
                         <NavLink to="/shop" className={mobileLinkClass} onClick={closeMobile}>
-                            Shop All
+                            Shop
                         </NavLink>
-
-                        <span className={styles.mobileSectionLabel} style={{ marginTop: 8 }}>Collections</span>
-                        <NavLink to="/shop?category=football" className={mobileLinkClass} onClick={closeMobile}>
-                            Football
-                        </NavLink>
-                        <NavLink to="/shop?category=basketball" className={mobileLinkClass} onClick={closeMobile}>
-                            Basketball
-                        </NavLink>
-                        <NavLink to="/shop?category=cricket" className={mobileLinkClass} onClick={closeMobile}>
-                            Cricket
+                        <NavLink to="/offer" className={mobileLinkClass} onClick={closeMobile}>
+                            Offer
                         </NavLink>
 
                         <div className={styles.mobileDivider} />

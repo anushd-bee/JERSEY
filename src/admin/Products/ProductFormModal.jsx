@@ -16,15 +16,18 @@ const schema = z.object({
     description: z.string().optional(),
     price: z.coerce.number({ invalid_type_error: 'Price is required' }).positive('Price must be greater than 0'),
     compare_price: z.coerce.number().positive('Must be positive').optional().or(z.literal('')),
-    category_id: z.string().min(1, 'Category is required'),
+    category_id: z.string().min(1, 'Please select a category.'),
     stock: z.coerce.number().int().min(0, 'Stock cannot be negative').default(0),
     is_active: z.boolean().default(true),
     is_featured: z.boolean().default(false),
+    is_offer: z.boolean().default(false),
 });
 
 export default function ProductFormModal({ isOpen, onClose, product, onSuccess }) {
     const isEditing = Boolean(product);
     const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(false);
+    const [categoriesError, setCategoriesError] = useState('');
     const [selectedSizes, setSelectedSizes] = useState([]);
     const [imageFiles, setImageFiles] = useState([]);       // File objects pending upload
     const [existingImages, setExistingImages] = useState([]); // Already-saved URLs (edit mode)
@@ -52,10 +55,12 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
             stock: 0,
             is_active: true,
             is_featured: false,
+            is_offer: false,
         },
     });
 
     const watchedName = watch('name');
+    const watchedIsOffer = watch('is_offer');
 
     // Auto-generate slug from name (only when NOT editing, or slug is still pristine)
     useEffect(() => {
@@ -64,10 +69,47 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
         }
     }, [watchedName, isEditing, setValue]);
 
-    // Load categories once
+    // Load ACTIVE categories only (inactive categories must not appear for new products)
     useEffect(() => {
-        categoryService.getAll().then(({ data }) => setCategories(data || []));
-    }, []);
+        if (!isOpen) return;
+
+        let active = true;
+        async function loadCategories() {
+            setCategoriesLoading(true);
+            setCategoriesError('');
+
+            try {
+                const { data, error } = await categoryService.getActive();
+                if (!active) return;
+
+                if (error) {
+                    setCategories([]);
+                    setCategoriesError('Unable to load categories right now.');
+                    return;
+                }
+
+                let nextCategories = [...(data || [])];
+
+                if (product?.category_id && !nextCategories.some(cat => cat.id === product.category_id)) {
+                    const { data: currentCategory, error: categoryError } = await categoryService.getById(product.category_id);
+                    if (!active) return;
+                    if (!categoryError && currentCategory) {
+                        nextCategories = [...nextCategories, currentCategory];
+                    }
+                }
+
+                nextCategories.sort((a, b) => a.name.localeCompare(b.name));
+                setCategories(nextCategories);
+            } finally {
+                if (active) {
+                    setCategoriesLoading(false);
+                }
+            }
+        }
+
+        loadCategories();
+        return () => { active = false; };
+    }, [isOpen, product?.id]);
 
     // Populate form when editing
     useEffect(() => {
@@ -83,6 +125,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
                     stock: product.stock ?? 0,
                     is_active: product.is_active ?? true,
                     is_featured: product.is_featured ?? false,
+                    is_offer: product.is_offer ?? false,
                 });
                 setSelectedSizes(product.sizes ?? []);
                 setExistingImages(product.images ?? []);
@@ -108,6 +151,12 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
     async function onSubmit(values) {
         setSubmitError('');
         setSubmitSuccess('');
+
+        if (!values.category_id) {
+            setSubmitError('Please select a category.');
+            return;
+        }
+
         setUploading(true);
 
         try {
@@ -241,16 +290,25 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
                         {/* Category */}
                         <div className="form-group">
                             <label className="form-label" htmlFor="prod-cat">Category *</label>
-                            <select
-                                id="prod-cat"
-                                className={`form-select${errors.category_id ? ' form-select--error' : ''}`}
-                                {...register('category_id')}
-                            >
-                                <option value="">Select category…</option>
-                                {categories.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
+                            {categoriesLoading ? (
+                                <p className="form-helper">Loading categories...</p>
+                            ) : categoriesError ? (
+                                <p className="form-error">{categoriesError}</p>
+                            ) : categories.length === 0 ? (
+                                <p className="form-helper">No categories available. Create a category first.</p>
+                            ) : (
+                                <select
+                                    id="prod-cat"
+                                    className={`form-select${errors.category_id ? ' form-select--error' : ''}`}
+                                    {...register('category_id')}
+                                    disabled={categoriesLoading}
+                                >
+                                    <option value="">Select category…</option>
+                                    {categories.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            )}
                             {errors.category_id && <p className="form-error">{errors.category_id.message}</p>}
                         </div>
 
@@ -266,6 +324,29 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
                                 {...register('stock')}
                             />
                         </div>
+
+                        {/* ── Offer Section ── */}
+                        <div className={`form-group ${styles.colSpan2}`}>
+                            <div className={styles.sectionDivider}>
+                                <span className={styles.sectionDividerLabel}>Offer / Discount</span>
+                            </div>
+                        </div>
+
+                        <div className={`form-group ${styles.colSpan2} ${styles.toggleRow}`}>
+                            <label className={styles.toggle}>
+                                <input type="checkbox" {...register('is_offer')} />
+                                <span className={styles.toggleTrack} />
+                                <span className="form-label">Enable Offer</span>
+                            </label>
+                        </div>
+
+                        {watchedIsOffer && (
+                            <div className={`form-group ${styles.colSpan2}`}>
+                                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)', margin: '0 0 8px' }}>
+                                    Set the <strong>Price</strong> field above as the discounted/offer price. Set <strong>Compare Price</strong> as the original price. The discount % will be calculated automatically on display.
+                                </p>
+                            </div>
+                        )}
 
                         {/* Sizes */}
                         <div className={`form-group ${styles.colSpan2}`}>

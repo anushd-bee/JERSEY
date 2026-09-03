@@ -23,7 +23,10 @@ CREATE TABLE public.categories (
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   description TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  image TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 4. Products Table
@@ -129,9 +132,9 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 2. Categories: Anyone can view. Only Admins can modify.
-CREATE POLICY "Categories are public" ON public.categories FOR SELECT USING (true);
-CREATE POLICY "Admins manage categories" ON public.categories USING (
+-- 2. Categories: Public can view active categories. Admins can manage all.
+CREATE POLICY "Active categories are public" ON public.categories FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins manage categories" ON public.categories FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
@@ -183,9 +186,13 @@ CREATE TRIGGER enforce_profile_security
   FOR EACH ROW EXECUTE PROCEDURE public.protect_role_update();
 
 -- Setup Storage bucket for products (Set to public access)
-INSERT INTO storage.buckets (id, name, public) VALUES ('product-images', 'product-images', true);
+INSERT INTO storage.buckets (id, name, public) VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
 CREATE POLICY "Public product images access" ON storage.objects FOR SELECT USING (bucket_id = 'product-images');
 CREATE POLICY "Admin image upload" ON storage.objects FOR INSERT WITH CHECK (
   bucket_id = 'product-images' AND 
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
+
+NOTIFY pgrst, 'reload schema';

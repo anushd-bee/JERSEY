@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Image as ImageIcon, Plus, Minus, X, Check } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
@@ -143,13 +143,26 @@ export default function ProductCard({ product }) {
     const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlist();
     const { user } = useAuth();
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [failedImages, setFailedImages] = useState({});
 
     const wishlisted = user && isWishlisted(product.id);
 
     /* Support both images[] array and single image field */
-    const images = product.images || (product.image ? [product.image] : []);
-    const primaryImage = images[0];
-    const secondaryImage = images[1]; // hover image if available
+    const images = [
+        ...(Array.isArray(product.images) ? product.images : []),
+        ...(product.image ? [product.image] : []),
+    ].filter(Boolean);
+    const usableImages = images.filter(image => !failedImages[image]);
+    const primaryImage = usableImages[0];
+    const secondaryImage = usableImages[1]; // hover image if available
+
+    useEffect(() => {
+        setFailedImages({});
+    }, [product.id]);
+
+    function handleImageError(image) {
+        setFailedImages(prev => ({ ...prev, [image]: true }));
+    }
 
     const discountPct =
         product.compare_price && product.compare_price > product.price
@@ -197,6 +210,7 @@ export default function ProductCard({ product }) {
                                 alt={product.name}
                                 className={`${styles.img} ${secondaryImage ? styles.imgPrimary : ''}`}
                                 loading="lazy"
+                                onError={() => handleImageError(primaryImage)}
                             />
                             {secondaryImage && (
                                 <img
@@ -205,6 +219,7 @@ export default function ProductCard({ product }) {
                                     className={`${styles.img} ${styles.imgSecondary}`}
                                     loading="lazy"
                                     aria-hidden="true"
+                                    onError={() => handleImageError(secondaryImage)}
                                 />
                             )}
                         </>

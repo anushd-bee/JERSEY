@@ -182,3 +182,25 @@
 .spin {
     animation: spin 0.7s linear infinite;
 }
+
+/* Section dividers inside the form */
+.sectionDivider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0 var(--space-xs);
+    border-top: 1px solid var(--border);
+    margin-top: var(--space-sm);
+}
+
+.sectionDividerLabel {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+    color: var(--muted);
+    white-space: nowrap;
+    border-left: 2px solid var(--accent);
+    padding-left: 8px;
+    line-height: 1;
+}

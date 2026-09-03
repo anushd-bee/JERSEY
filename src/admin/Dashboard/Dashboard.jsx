@@ -21,6 +21,7 @@ import styles from './Dashboard.module.css';
 
 const sidebarLinks = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { to: '/admin/home', icon: LayoutDashboard, label: 'Home Page' },
     { to: '/admin/products', icon: Package, label: 'Products' },
     { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
     { to: '/admin/customers', icon: Users, label: 'Customers' },

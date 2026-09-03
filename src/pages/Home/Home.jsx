@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     ArrowRight,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
+import { cmsService } from '../../services/cmsService';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import { ProductSkeleton } from '../../components/Loading/Loading';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
@@ -37,27 +38,107 @@ const MARQUEE_ITEMS = [
     'VERIFIED AUTHENTIC',
 ];
 
+const DEFAULT_SETTINGS = {
+    hero_autoplay: true,
+    hero_autoplay_speed: 5000,
+    categories_section: {
+        enabled: true,
+        title: 'Shop by Sport',
+        subtitle: '',
+        limit: 5,
+        category_ids: [],
+    },
+    featured_section: {
+        enabled: true,
+        title: 'Featured Drop',
+        subtitle: "The jerseys everyone's talking about.",
+        limit: 8,
+        product_ids: [],
+    },
+    promo_section: {
+        enabled: true,
+        eyebrow: '2026 Season Drop',
+        title: 'NEW SEASON.\nREPRESENT\nYOUR TEAM.',
+        description: 'Get the latest designs with authentic materials and official branding. Limited stock available.',
+        button_text: 'EXPLORE COLLECTION',
+        button_url: '/shop',
+        image: '',
+    },
+};
+
 export default function Home() {
     const [featured, setFeatured] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [heroSlides, setHeroSlides] = useState([]);
+    const [announcements, setAnnouncements] = useState([]);
+    const [settings, setSettings] = useState(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [heroReady, setHeroReady] = useState(false);
+    const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
     const mainRef = useRef(null);
     useScrollReveal(mainRef);
+
+    const cmsAnnouncements = announcements.length > 0 ? announcements : MARQUEE_ITEMS.map((item) => ({ text: item, is_active: true }));
+    const activeHeroSlide = heroSlides[activeSlideIndex] || heroSlides[0] || null;
+    const categorySection = settings.categories_section || DEFAULT_SETTINGS.categories_section;
+    const featuredSection = settings.featured_section || DEFAULT_SETTINGS.featured_section;
+    const promoSection = settings.promo_section || DEFAULT_SETTINGS.promo_section;
+
+    const visibleCategories = useMemo(() => {
+        const selectedIds = (categorySection.category_ids || []).map(String);
+        const limit = Number(categorySection.limit) || 5;
+        const source = selectedIds.length ? categories.filter(cat => selectedIds.includes(String(cat.id))) : categories;
+        return source.slice(0, limit);
+    }, [categories, categorySection]);
+
+    const visibleFeaturedProducts = useMemo(() => {
+        const selectedIds = (featuredSection.product_ids || []).map(String);
+        const limit = Number(featuredSection.limit) || 8;
+        const source = selectedIds.length ? featured.filter(product => selectedIds.includes(String(product.id))) : featured;
+        return source.slice(0, limit);
+    }, [featured, featuredSection]);
 
     /* ── Data fetch ─────────────────────────── */
     useEffect(() => {
         async function load() {
             try {
-                const [featuredRes, catRes] = await Promise.all([
+                setLoadError('');
+                const [featuredRes, catRes, heroRes, announcementRes, settingsRes] = await Promise.all([
                     productService.getFeatured(),
-                    categoryService.getAll(),
+                    categoryService.getActive(),
+                    cmsService.getHeroSlides(),
+                    cmsService.getAnnouncements(),
+                    cmsService.getSettings(),
                 ]);
+
                 setFeatured(featuredRes.data || []);
                 setCategories(catRes.data || []);
+                setHeroSlides(heroRes.data || []);
+                setAnnouncements(announcementRes.data || []);
+                setSettings({
+                    ...DEFAULT_SETTINGS,
+                    ...(settingsRes.data?.settings || {}),
+                    categories_section: {
+                        ...DEFAULT_SETTINGS.categories_section,
+                        ...(settingsRes.data?.settings?.categories_section || {}),
+                    },
+                    featured_section: {
+                        ...DEFAULT_SETTINGS.featured_section,
+                        ...(settingsRes.data?.settings?.featured_section || {}),
+                    },
+                    promo_section: {
+                        ...DEFAULT_SETTINGS.promo_section,
+                        ...(settingsRes.data?.settings?.promo_section || {}),
+                    },
+                });
+                if (featuredRes.error || catRes.error) {
+                    setLoadError('Some homepage content could not be loaded. Please try again shortly.');
+                }
             } catch (err) {
                 console.error('Error loading home data:', err);
+                setLoadError('Homepage content is temporarily unavailable. Please try again shortly.');
             } finally {
                 setLoading(false);
             }
@@ -65,11 +146,34 @@ export default function Home() {
         load();
     }, []);
 
+    useEffect(() => {
+        const autoplayEnabled = settings.hero_autoplay !== false;
+        if (!autoplayEnabled || heroSlides.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setActiveSlideIndex(prev => (prev + 1) % heroSlides.length);
+        }, Number(settings.hero_autoplay_speed) || 5000);
+
+        return () => clearInterval(interval);
+    }, [heroSlides, settings.hero_autoplay, settings.hero_autoplay_speed]);
+
     /* ── Hero entrance ─────────────────────── */
     useEffect(() => {
         const t = setTimeout(() => setHeroReady(true), 60);
         return () => clearTimeout(t);
     }, []);
+
+    const heroEyebrow = activeHeroSlide?.eyebrow || '2026 / 27 COLLECTION';
+    const heroTitle = activeHeroSlide?.title || 'WEAR THE GAME.';
+    const heroSubtitle = activeHeroSlide?.subtitle || 'Premium authentic jerseys from the world\'s biggest clubs and national teams.';
+    const heroDescription = activeHeroSlide?.description || 'Discover premium jerseys built for matchday energy and everyday style.';
+    const heroPrimaryText = activeHeroSlide?.primary_button_text || 'SHOP COLLECTION';
+    const heroPrimaryUrl = activeHeroSlide?.primary_button_url || '/shop';
+    const heroSecondaryText = activeHeroSlide?.secondary_button_text || 'Explore Football';
+    const heroSecondaryUrl = activeHeroSlide?.secondary_button_url || '/shop?category=football';
+    const heroDesktopImage = activeHeroSlide?.desktop_image || (featured[0]?.images?.[0] || featured[0]?.image || '');
+    const heroMobileImage = activeHeroSlide?.mobile_image || heroDesktopImage;
+    const featuredImage = featured[1]?.images?.[0] || featured[1]?.image || '';
 
     return (
         <main ref={mainRef} className={styles.main}>
@@ -91,31 +195,36 @@ export default function Home() {
                         {/* Eyebrow */}
                         <div className={styles.heroEyebrow}>
                             <span className={styles.heroEyebrowDot} aria-hidden="true" />
-                            <span>2026 / 27 COLLECTION</span>
+                            <span>{heroEyebrow}</span>
                         </div>
 
                         {/* Editorial headline — two lines */}
-                        <h1 className={styles.heroTitle} aria-label="Wear The Game.">
-                            <span className={styles.heroLine1}>WEAR</span>
-                            <span className={styles.heroLine2}>
-                                THE<span className={styles.heroAccent}> GAME.</span>
-                            </span>
+                        <h1 className={styles.heroTitle} aria-label={heroTitle}>
+                            {heroTitle.includes(' ') ? (
+                                <>
+                                    <span className={styles.heroLine1}>{heroTitle.split(' ').slice(0, -1).join(' ')}</span>
+                                    <span className={styles.heroLine2}>
+                                        {heroTitle.split(' ').slice(-1)[0]}<span className={styles.heroAccent}>.</span>
+                                    </span>
+                                </>
+                            ) : (
+                                <span className={styles.heroLine1}>{heroTitle}</span>
+                            )}
                         </h1>
 
                         {/* Sub-copy */}
                         <p className={styles.heroSub}>
-                            Premium authentic jerseys from the world's biggest clubs
-                            and national teams. Represent your team on and off the field.
+                            {heroSubtitle || heroDescription}
                         </p>
 
                         {/* CTAs */}
                         <div className={styles.heroCtas}>
-                            <Link to="/shop" className={styles.heroPrimary}>
-                                SHOP COLLECTION
+                            <Link to={heroPrimaryUrl} className={styles.heroPrimary}>
+                                {heroPrimaryText}
                                 <ArrowRight size={16} strokeWidth={2.5} />
                             </Link>
-                            <Link to="/shop?category=football" className={styles.heroSecondary}>
-                                Explore Football
+                            <Link to={heroSecondaryUrl} className={styles.heroSecondary}>
+                                {heroSecondaryText}
                             </Link>
                         </div>
 
@@ -141,8 +250,17 @@ export default function Home() {
                     {/* ── Right: image composition ── */}
                     <div className={`${styles.heroImage} ${heroReady ? styles.heroReady : ''}`} aria-hidden="true">
                         <div className={styles.heroImageFrame}>
-                            {/* Featured product image if available, else editorial placeholder */}
-                            {featured[0]?.images?.[0] || featured[0]?.image ? (
+                            {heroDesktopImage ? (
+                                <picture>
+                                    {heroMobileImage && <source media="(max-width: 767px)" srcSet={heroMobileImage} />}
+                                    <img
+                                        src={heroDesktopImage}
+                                        alt={heroTitle}
+                                        className={styles.heroImg}
+                                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                                    />
+                                </picture>
+                            ) : featured[0]?.images?.[0] || featured[0]?.image ? (
                                 <img
                                     src={featured[0]?.images?.[0] || featured[0]?.image}
                                     alt="Featured jersey"
@@ -159,7 +277,7 @@ export default function Home() {
                             )}
                             {/* Floating accent label */}
                             <div className={styles.heroFloatLabel}>
-                                <span>Season 2026/27</span>
+                                <span>{activeHeroSlide?.subtitle || 'Season 2026/27'}</span>
                             </div>
                             {/* Corner accent */}
                             <div className={styles.heroCornerAccent} aria-hidden="true" />
@@ -179,25 +297,28 @@ export default function Home() {
             <div className={styles.marqueeBar} aria-hidden="true">
                 <div className={styles.marqueeTrack}>
                     {/* Doubled for seamless loop */}
-                    {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-                        <span key={i} className={styles.marqueeItem}>
+                    {[...cmsAnnouncements, ...cmsAnnouncements].map((item, i) => (
+                        <span key={`${item.text}-${i}`} className={styles.marqueeItem}>
                             <span className={styles.marqueeDot} />
-                            {item}
+                            {item.text}
                         </span>
                     ))}
                 </div>
             </div>
 
+            {loadError && <div className={styles.homeError} role="status">{loadError}</div>}
+
             {/* ══════════════════════════════════════
                 CATEGORIES — Premium visual cards
             ══════════════════════════════════════ */}
-            {categories.length > 0 && (
+            {categorySection.enabled !== false && visibleCategories.length > 0 && (
                 <section className={styles.categoriesSection}>
                     <div className={styles.sectionInner}>
                         <div className={`${styles.sectionHeader} reveal`}>
                             <div>
                                 <span className={styles.sectionEyebrow}>Browse</span>
-                                <h2 className={styles.sectionTitle}>Shop by Sport</h2>
+                                <h2 className={styles.sectionTitle}>{categorySection.title || 'Shop by Sport'}</h2>
+                                {categorySection.subtitle && <p className={styles.sectionSub}>{categorySection.subtitle}</p>}
                             </div>
                             <Link to="/shop" className={styles.sectionLink}>
                                 View All <ArrowRight size={14} strokeWidth={2.5} />
@@ -205,7 +326,7 @@ export default function Home() {
                         </div>
 
                         <div className={`${styles.catGrid} stagger-children`}>
-                            {categories.slice(0, 5).map((cat, idx) => {
+                            {visibleCategories.map((cat, idx) => {
                                 const config = CATEGORY_CONFIG[cat.slug] || {};
                                 return (
                                     <Link
@@ -219,15 +340,16 @@ export default function Home() {
                                         <div className={styles.catBg} aria-hidden="true" />
 
                                         {/* Category image if available */}
-                                        {cat.image && (
+                                        {cat.image ? (
                                             <img
                                                 src={cat.image}
                                                 alt=""
                                                 className={styles.catImg}
                                                 loading="lazy"
                                                 aria-hidden="true"
+                                                onError={(event) => { event.currentTarget.style.display = 'none'; }}
                                             />
-                                        )}
+                                        ) : null}
 
                                         {/* Overlay gradient */}
                                         <div className={styles.catOverlay} aria-hidden="true" />
@@ -262,13 +384,14 @@ export default function Home() {
             {/* ══════════════════════════════════════
                 FEATURED PRODUCTS
             ══════════════════════════════════════ */}
+            {featuredSection.enabled !== false && (
             <section className={styles.featuredSection}>
                 <div className={styles.sectionInner}>
                     <div className={`${styles.sectionHeader} reveal`}>
                         <div>
                             <span className={styles.sectionEyebrow}>Handpicked</span>
-                            <h2 className={styles.sectionTitle}>Featured Drop</h2>
-                            <p className={styles.sectionSub}>The jerseys everyone&apos;s talking about.</p>
+                            <h2 className={styles.sectionTitle}>{featuredSection.title || 'Featured Drop'}</h2>
+                            {featuredSection.subtitle && <p className={styles.sectionSub}>{featuredSection.subtitle}</p>}
                         </div>
                         <Link to="/shop" className={styles.sectionLink}>
                             Shop All <ArrowRight size={14} strokeWidth={2.5} />
@@ -278,46 +401,53 @@ export default function Home() {
                     <div className="reveal">
                         {loading ? (
                             <ProductSkeleton count={8} />
+                        ) : visibleFeaturedProducts.length > 0 ? (
+                            <ProductGrid products={visibleFeaturedProducts} />
                         ) : (
-                            <ProductGrid products={featured} />
+                            <div className={styles.featuredEmpty}>
+                                <h3>Featured jerseys are coming soon.</h3>
+                                <p>Check back shortly for our latest drops.</p>
+                            </div>
                         )}
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ══════════════════════════════════════
                 PROMO BANNER — Cinematic campaign
             ══════════════════════════════════════ */}
+            {promoSection.enabled !== false && (
             <section className={styles.banner} aria-label="Promotional banner">
                 <div className={styles.bannerBg} aria-hidden="true" />
                 <div className={styles.bannerNoise} aria-hidden="true" />
                 <div className={styles.bannerInner}>
                     {/* Left: text */}
                     <div className={`${styles.bannerText} reveal`}>
-                        <span className={styles.bannerEyebrow}>2026 Season Drop</span>
+                        <span className={styles.bannerEyebrow}>{promoSection.eyebrow}</span>
                         <h2 className={styles.bannerTitle}>
-                            NEW SEASON.<br />
-                            <span className={styles.bannerTitleAccent}>REPRESENT</span><br />
-                            YOUR TEAM.
+                            {(promoSection.title || '').split('\n').map((line, index) => (
+                                <span key={`${line}-${index}`} className={index === 1 ? styles.bannerTitleAccent : ''}>
+                                    {line}{index < promoSection.title.split('\n').length - 1 && <br />}
+                                </span>
+                            ))}
                         </h2>
-                        <p className={styles.bannerDesc}>
-                            Get the latest designs with authentic materials and official
-                            branding. Limited stock available.
-                        </p>
-                        <Link to="/shop" className={styles.bannerCta}>
-                            EXPLORE COLLECTION
+                        <p className={styles.bannerDesc}>{promoSection.description}</p>
+                        <Link to={promoSection.button_url || '/shop'} className={styles.bannerCta}>
+                            {promoSection.button_text || 'EXPLORE COLLECTION'}
                             <ArrowRight size={16} strokeWidth={2.5} />
                         </Link>
                     </div>
 
                     {/* Right: image */}
                     <div className={`${styles.bannerVisual} reveal reveal--right`} aria-hidden="true">
-                        {featured[1]?.images?.[0] || featured[1]?.image ? (
+                        {promoSection.image || featuredImage ? (
                             <img
-                                src={featured[1]?.images?.[0] || featured[1]?.image}
+                                src={promoSection.image || featuredImage}
                                 alt=""
                                 className={styles.bannerImg}
                                 loading="lazy"
+                                onError={(event) => { event.currentTarget.style.display = 'none'; }}
                             />
                         ) : (
                             <div className={styles.bannerImgPlaceholder}>
@@ -329,6 +459,7 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ══════════════════════════════════════
                 FEATURES — Editorial promise strip
