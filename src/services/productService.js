@@ -83,6 +83,12 @@ export const productService = {
             .eq('slug', slug)
             .eq('is_active', true)
             .maybeSingle();
+        if (error) {
+            console.error('[ProductService] Failed to load active product by slug:', {
+                slug,
+                error,
+            });
+        }
         return { data, error };
     },
 
