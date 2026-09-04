@@ -22,6 +22,10 @@ function cartReducer(state, action) {
 
     switch (action.type) {
         case 'ADD_ITEM': {
+            const requestedQuantity = action.payload.quantity || 1;
+            const maxStock = Number.isFinite(Number(action.payload.stock))
+                ? Math.max(0, Number(action.payload.stock))
+                : null;
             const existing = state.find(
                 (item) =>
                     item.id === action.payload.id && item.size === action.payload.size
@@ -29,11 +33,19 @@ function cartReducer(state, action) {
             if (existing) {
                 newState = state.map((item) =>
                     item.id === action.payload.id && item.size === action.payload.size
-                        ? { ...item, quantity: item.quantity + (action.payload.quantity || 1) }
+                        ? {
+                            ...item,
+                            quantity: maxStock === null
+                                ? item.quantity + requestedQuantity
+                                : Math.min(maxStock, item.quantity + requestedQuantity),
+                        }
                         : item
                 );
             } else {
-                newState = [...state, { ...action.payload, quantity: action.payload.quantity || 1 }];
+                newState = [...state, {
+                    ...action.payload,
+                    quantity: maxStock === null ? requestedQuantity : Math.min(maxStock, requestedQuantity),
+                }].filter(item => item.quantity > 0);
             }
             break;
         }
@@ -52,7 +64,12 @@ function cartReducer(state, action) {
             } else {
                 newState = state.map((item) =>
                     item.id === action.payload.id && item.size === action.payload.size
-                        ? { ...item, quantity: action.payload.quantity }
+                        ? {
+                            ...item,
+                            quantity: Number.isFinite(Number(item.stock))
+                                ? Math.min(Math.max(0, Number(item.stock)), action.payload.quantity)
+                                : action.payload.quantity,
+                        }
                         : item
                 );
             }
@@ -85,6 +102,7 @@ export function CartProvider({ children }) {
                 name: product.name,
                 price: product.price,
                 image: product.images?.[0] || product.image,
+                stock: product.stock,
                 size,
                 quantity,
                 slug: product.slug,

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, ChevronLeft, ChevronRight, Maximize2, X } from 'lucide-react';
 import styles from './ProductGallery.module.css';
 
 /**
@@ -15,6 +15,7 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
     const [activeIndex, setActiveIndex] = useState(0);
     const [transitioning, setTransitioning] = useState(false);
     const [failedImages, setFailedImages] = useState({});
+    const [zoomOpen, setZoomOpen] = useState(false);
 
     const validImages = images.filter(image => image && !failedImages[image]);
     const imageKey = images.join('|');
@@ -37,6 +38,10 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
             setTransitioning(false);
         }, 200);
     }, [activeIndex]);
+
+    const changeImage = useCallback((direction) => {
+        setActiveIndex(index => (index + direction + validImages.length) % validImages.length);
+    }, [validImages.length]);
 
     const LABELS = ['Primary', 'Front', 'Back', 'Side', 'Detail'];
 
@@ -63,6 +68,19 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
                     draggable={false}
                     onError={() => setFailedImages(prev => ({ ...prev, [validImages[activeIndex]]: true }))}
                 />
+                {validImages.length > 1 && (
+                    <>
+                        <button className={`${styles.galleryControl} ${styles.galleryControlPrev}`} onClick={() => changeImage(-1)} aria-label="Previous product image">
+                            <ChevronLeft size={20} />
+                        </button>
+                        <button className={`${styles.galleryControl} ${styles.galleryControlNext}`} onClick={() => changeImage(1)} aria-label="Next product image">
+                            <ChevronRight size={20} />
+                        </button>
+                    </>
+                )}
+                <button className={styles.zoomButton} onClick={() => setZoomOpen(true)} aria-label="Zoom product image">
+                    <Maximize2 size={17} />
+                </button>
                 {discount > 0 && (
                     <span className={styles.badgeSale}>
                         &minus;{discount}%
@@ -94,6 +112,12 @@ export default function ProductGallery({ images = [], alt = 'Product', discount 
                             )}
                         </button>
                     ))}
+                </div>
+            )}
+            {zoomOpen && (
+                <div className={styles.lightbox} role="dialog" aria-modal="true" aria-label="Product image zoom" onClick={() => setZoomOpen(false)}>
+                    <button className={styles.lightboxClose} onClick={() => setZoomOpen(false)} aria-label="Close image zoom"><X size={22} /></button>
+                    <img src={validImages[activeIndex]} alt={alt} className={styles.lightboxImage} onClick={event => event.stopPropagation()} />
                 </div>
             )}
         </div>
