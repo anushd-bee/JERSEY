@@ -1,616 +1,67 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Loader, Image as ImageIcon, Pencil, Trash2, Plus, Save, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowDown, ArrowUp, Check, GripVertical, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
 import { cmsService } from '../../services/cmsService';
+import { PageLoader } from '../../components/Loading/Loading';
+import HeroPreview, { SettingsPreview } from './HeroPreview';
 import styles from './HomeCMS.module.css';
 
-const emptySlide = {
-    id: null,
-    eyebrow: '',
-    title: '',
-    subtitle: '',
-    description: '',
-    primary_button_text: '',
-    primary_button_url: '',
-    secondary_button_text: '',
-    secondary_button_url: '',
-    desktop_image: '',
-    mobile_image: '',
-    display_order: 0,
-    is_active: true,
+const DEFAULTS = {
+    hero_autoplay: true, hero_autoplay_speed: 5000, animation_speed: 600,
+    categories_section: { enabled: true, title: 'Shop by Sport', subtitle: '', limit: 5, category_ids: [] },
+    featured_section: { enabled: true, title: 'Featured Drop', subtitle: "The jerseys everyone's talking about.", limit: 8, product_ids: [] },
+    promo_section: { enabled: true, eyebrow: '2026 Season Drop', title: 'NEW SEASON.\nREPRESENT\nYOUR TEAM.', description: 'Get the latest designs with authentic materials and official branding. Limited stock available.', button_text: 'EXPLORE COLLECTION', button_url: '/shop', image: '' },
+    features_section: { eyebrow: 'Why Us', title: 'The JerseyStore Promise', items: [{ icon: 'Truck', title: 'Free Shipping', description: 'Free delivery on all orders above ₹999.', order: 1 }, { icon: 'BadgeCheck', title: '100% Authentic', description: 'Every jersey is sourced from official suppliers.', order: 2 }, { icon: 'RotateCcw', title: 'Easy Returns', description: 'Return within 15 days for a full refund.', order: 3 }, { icon: 'Shield', title: 'Secure Payment', description: 'Industry-standard encryption protects your payment.', order: 4 }] },
+    hero_stats: [{ number: '500+', label: 'Jerseys' }, { number: '50+', label: 'Brands' }, { number: '10K+', label: 'Fans' }],
 };
+const EMPTY_SLIDE = { eyebrow: '2026 / 27 COLLECTION', title: 'WEAR THE GAME.', subtitle: 'Premium authentic jerseys from the world\'s biggest clubs and national teams.', description: '', primary_button_text: 'SHOP COLLECTION', primary_button_url: '/shop', secondary_button_text: 'Explore Football', secondary_button_url: '/shop?category=football', desktop_image: '', mobile_image: '', media_type: 'image', video_url: '', animation_type: 'ken-burns', animation_duration: 600, background_position: 'center', display_order: 0, is_active: true };
+const ANIMATIONS = ['none', 'ken-burns', 'slow-zoom', 'fade', 'slide', 'parallax'];
+const ICONS = ['Truck', 'BadgeCheck', 'RotateCcw', 'Shield'];
+const TABS = ['Hero', 'Announcements', 'Categories', 'Featured Products', 'Promo Banner', 'Features/Promise', 'Settings'];
 
-const emptyAnnouncement = {
-    id: null,
-    text: '',
-    display_order: 0,
-    is_active: true,
-};
+function mergeSettings(value) { return { ...DEFAULTS, ...(value || {}), categories_section: { ...DEFAULTS.categories_section, ...(value?.categories_section || {}) }, featured_section: { ...DEFAULTS.featured_section, ...(value?.featured_section || {}) }, promo_section: { ...DEFAULTS.promo_section, ...(value?.promo_section || {}) }, features_section: { ...DEFAULTS.features_section, ...(value?.features_section || {}), items: value?.features_section?.items || DEFAULTS.features_section.items }, hero_stats: Array.isArray(value?.hero_stats) ? value.hero_stats : DEFAULTS.hero_stats }; }
+function move(list, from, to) { const next = [...list]; const [item] = next.splice(from, 1); next.splice(to, 0, item); return next.map((entry, index) => ({ ...entry, display_order: index })); }
+function Field({ label, error, ...props }) { return <label className={styles.field}><span>{label}</span>{props.children || (props.type === 'textarea' ? <textarea {...props} /> : <input {...props} />)}{error && <small className={styles.fieldError}>{error}</small>}</label>; }
+function Toggle({ label, checked, onChange }) { return <label className={styles.toggle}><input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} /><span />{label}</label>; }
+function UploadField({ label, value, onChange, folder, accept = 'image/png,image/jpeg,image/webp' }) { const [error, setError] = useState(''); async function upload(event) { const file = event.target.files?.[0]; if (!file) return; if (!accept.includes(file.type) && !(accept.includes('video') && file.type.startsWith('video/'))) { setError('Use a supported image or video type.'); return; } if (file.size > 10 * 1024 * 1024) { setError('File must be 10 MB or smaller.'); return; } setError(''); const result = await cmsService.uploadHomepageMedia(file, folder); if (result.error) setError(result.error.message); else onChange(result.data); } return <div className={styles.uploadField}><Field label={label} value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Paste a public URL or upload" /> <label className="btn btn--sm btn--ghost"><Upload size={14} /> Upload<input hidden type="file" accept={accept} onChange={upload} /></label>{value && <button type="button" className="btn btn--icon btn--sm btn--ghost" onClick={() => onChange('')} aria-label={`Remove ${label}`}><X size={14} /></button>}{error && <small className={styles.fieldError}>{error}</small>}</div>; }
 
 export default function HomeCMS() {
-    const [tab, setTab] = useState('hero');
-    const [slides, setSlides] = useState([]);
-    const [announcements, setAnnouncements] = useState([]);
-    const [allCategories, setAllCategories] = useState([]);
-    const [allProducts, setAllProducts] = useState([]);
-    const [settings, setSettings] = useState({
-        hero_autoplay: true,
-        hero_autoplay_speed: 5000,
-        animation_speed: 600,
-        categories_section: {
-            enabled: true,
-            title: 'Shop by Sport',
-            subtitle: '',
-            limit: 5,
-            category_ids: [],
-        },
-        featured_section: {
-            enabled: true,
-            title: 'Featured Drop',
-            subtitle: "The jerseys everyone's talking about.",
-            limit: 8,
-            product_ids: [],
-        },
-            promo_section: {
-                enabled: true,
-                eyebrow: '2026 Season Drop',
-                title: 'NEW SEASON.\nREPRESENT\nYOUR TEAM.',
-                description: 'Get the latest designs with authentic materials and official branding. Limited stock available.',
-                button_text: 'EXPLORE COLLECTION',
-                button_url: '/shop',
-                image: '',
-            },
-    });
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [slideForm, setSlideForm] = useState(emptySlide);
-    const [announcementForm, setAnnouncementForm] = useState(emptyAnnouncement);
-    const desktopInputRef = useRef(null);
-    const mobileInputRef = useRef(null);
-
-    useEffect(() => {
-        loadCMS();
-    }, []);
-
-    async function loadCMS() {
-        setLoading(true);
-        setError('');
-
-        const [heroRes, announcementRes, settingsRes, categoryRes, productRes] = await Promise.all([
-            cmsService.getHeroSlides(),
-            cmsService.getAnnouncements(),
-            cmsService.getSettings(),
-            categoryService.getAll(),
-            productService.getAll({ limit: 200 }),
-        ]);
-
-        if (heroRes.error) setError(heroRes.error.message);
-        if (announcementRes.error) setError(announcementRes.error.message);
-        if (settingsRes.error) setError(settingsRes.error.message);
-
-        setSlides(heroRes.data || []);
-        setAnnouncements(announcementRes.data || []);
-        setAllCategories(categoryRes.data || []);
-        setAllProducts(productRes.data || []);
-        setSettings({
-            hero_autoplay: true,
-            hero_autoplay_speed: 5000,
-            animation_speed: 600,
-            ...(settingsRes.data?.settings || {}),
-            categories_section: {
-                enabled: true,
-                title: 'Shop by Sport',
-                subtitle: '',
-                limit: 5,
-                category_ids: [],
-                ...(settingsRes.data?.settings?.categories_section || {}),
-            },
-            featured_section: {
-                enabled: true,
-                title: 'Featured Drop',
-                subtitle: "The jerseys everyone's talking about.",
-                limit: 8,
-                product_ids: [],
-                ...(settingsRes.data?.settings?.featured_section || {}),
-            },
-            promo_section: {
-                enabled: true,
-                eyebrow: '2026 Season Drop',
-                title: 'NEW SEASON.\nREPRESENT\nYOUR TEAM.',
-                description: 'Get the latest designs with authentic materials and official branding. Limited stock available.',
-                button_text: 'EXPLORE COLLECTION',
-                button_url: '/shop',
-                image: '',
-                ...(settingsRes.data?.settings?.promo_section || {}),
-            },
-        });
-        setLoading(false);
-    }
-
-    function toggleCategorySelection(categoryId) {
-        const current = settings.categories_section?.category_ids || [];
-        const next = current.includes(categoryId)
-            ? current.filter(id => id !== categoryId)
-            : [...current, categoryId];
-
-        setSettings(prev => ({
-            ...prev,
-            categories_section: {
-                ...prev.categories_section,
-                category_ids: next,
-            },
-        }));
-    }
-
-    function toggleProductSelection(productId) {
-        const current = settings.featured_section?.product_ids || [];
-        const next = current.includes(productId)
-            ? current.filter(id => id !== productId)
-            : [...current, productId];
-
-        setSettings(prev => ({
-            ...prev,
-            featured_section: {
-                ...prev.featured_section,
-                product_ids: next,
-            },
-        }));
-    }
-
-    const slideList = useMemo(() => slides || [], [slides]);
-    const announcementList = useMemo(() => announcements || [], [announcements]);
-
-    async function handleSaveSettings(e) {
-        e.preventDefault();
-        setSaving(true);
-        setError('');
-
-        const { error: saveError } = await cmsService.saveSettings(settings);
-        if (saveError) {
-            setError(saveError.message || 'Unable to save homepage settings.');
-        }
-
-        setSaving(false);
-    }
-
-    async function handleHeroSubmit(e) {
-        e.preventDefault();
-        setSaving(true);
-        setError('');
-
-        try {
-            const payload = {
-                ...slideForm,
-                display_order: slideForm.id ? slideForm.display_order : slideList.length,
-                is_active: slideForm.is_active,
-                desktop_image: slideForm.desktop_image || '',
-                mobile_image: slideForm.mobile_image || '',
-            };
-
-            const { data, error: heroError } = slideForm.id
-                ? await cmsService.updateHeroSlide(slideForm.id, payload)
-                : await cmsService.createHeroSlide(payload);
-
-            if (heroError) throw new Error(heroError.message);
-
-            setSlideForm(emptySlide);
-            setSlides(prev => {
-                if (!slideForm.id) return [...prev, data];
-                return prev.map(item => item.id === data.id ? data : item);
-            });
-        } catch (err) {
-            setError(err.message || 'Unable to save hero slide.');
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    async function handleAnnouncementSubmit(e) {
-        e.preventDefault();
-        setSaving(true);
-        setError('');
-
-        try {
-            const payload = {
-                ...announcementForm,
-                display_order: announcementForm.id ? announcementForm.display_order : announcementList.length,
-                is_active: announcementForm.is_active,
-            };
-
-            const { data, error: announcementError } = announcementForm.id
-                ? await cmsService.updateAnnouncement(announcementForm.id, payload)
-                : await cmsService.createAnnouncement(payload);
-
-            if (announcementError) throw new Error(announcementError.message);
-
-            setAnnouncementForm(emptyAnnouncement);
-            setAnnouncements(prev => {
-                if (!announcementForm.id) return [...prev, data];
-                return prev.map(item => item.id === data.id ? data : item);
-            });
-        } catch (err) {
-            setError(err.message || 'Unable to save announcement.');
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    async function handleDeleteSlide(id) {
-        if (!window.confirm('Delete this hero slide?')) return;
-        const { error } = await cmsService.deleteHeroSlide(id);
-        if (error) {
-            setError(error.message);
-            return;
-        }
-        setSlides(prev => prev.filter(item => item.id !== id));
-    }
-
-    async function handleDeleteAnnouncement(id) {
-        if (!window.confirm('Delete this announcement?')) return;
-        const { error } = await cmsService.deleteAnnouncement(id);
-        if (error) {
-            setError(error.message);
-            return;
-        }
-        setAnnouncements(prev => prev.filter(item => item.id !== id));
-    }
-
-    async function handleImageUpload(event, target) {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        setSaving(true);
-        setError('');
-
-        const { data: url, error: uploadError } = await cmsService.uploadCmsImage(file, 'cms/hero');
-        if (uploadError) {
-            setError(uploadError.message || 'Unable to upload image.');
-            setSaving(false);
-            return;
-        }
-
-        if (target === 'desktop') {
-            setSlideForm(prev => ({ ...prev, desktop_image: url }));
-        } else {
-            setSlideForm(prev => ({ ...prev, mobile_image: url }));
-        }
-
-        setSaving(false);
-        event.target.value = '';
-    }
-
-    if (loading) {
-        return <div className={styles.loadingWrap}><Loader className={styles.spinner} /> Loading homepage CMS…</div>;
-    }
-
-    return (
-        <div className={styles.page}>
-            <div className={styles.pageHeader}>
-                <div>
-                    <p className={styles.eyebrow}>Homepage CMS</p>
-                    <h1 className={styles.title}>Home Page</h1>
-                </div>
-            </div>
-
-            {error && <div className={styles.error}>{error}</div>}
-
-            <div className={styles.tabs}>
-                <button className={tab === 'hero' ? styles.tabActive : ''} onClick={() => setTab('hero')}>Hero Slides</button>
-                <button className={tab === 'announcements' ? styles.tabActive : ''} onClick={() => setTab('announcements')}>Announcements</button>
-                <button className={tab === 'settings' ? styles.tabActive : ''} onClick={() => setTab('settings')}>Settings</button>
-            </div>
-
-            {tab === 'hero' && (
-                <div className={styles.grid}>
-                    <form onSubmit={handleHeroSubmit} className={styles.panel}>
-                        <h2>{slideForm.id ? 'Edit Hero Slide' : 'Add Hero Slide'}</h2>
-
-                        <div className={styles.fieldGrid}>
-                            <label>
-                                Eyebrow
-                                <input value={slideForm.eyebrow} onChange={e => setSlideForm({ ...slideForm, eyebrow: e.target.value })} />
-                            </label>
-                            <label>
-                                Title
-                                <input value={slideForm.title} onChange={e => setSlideForm({ ...slideForm, title: e.target.value })} required />
-                            </label>
-                            <label>
-                                Subtitle
-                                <input value={slideForm.subtitle} onChange={e => setSlideForm({ ...slideForm, subtitle: e.target.value })} />
-                            </label>
-                            <label>
-                                Description
-                                <textarea value={slideForm.description} onChange={e => setSlideForm({ ...slideForm, description: e.target.value })} />
-                            </label>
-                            <label>
-                                Primary button text
-                                <input value={slideForm.primary_button_text} onChange={e => setSlideForm({ ...slideForm, primary_button_text: e.target.value })} />
-                            </label>
-                            <label>
-                                Primary button URL
-                                <input value={slideForm.primary_button_url} onChange={e => setSlideForm({ ...slideForm, primary_button_url: e.target.value })} />
-                            </label>
-                            <label>
-                                Secondary button text
-                                <input value={slideForm.secondary_button_text} onChange={e => setSlideForm({ ...slideForm, secondary_button_text: e.target.value })} />
-                            </label>
-                            <label>
-                                Secondary button URL
-                                <input value={slideForm.secondary_button_url} onChange={e => setSlideForm({ ...slideForm, secondary_button_url: e.target.value })} />
-                            </label>
-                        </div>
-
-                        <div className={styles.uploadRow}>
-                            <div className={styles.uploadBox}>
-                                <span>Desktop image</span>
-                                {slideForm.desktop_image ? (
-                                    <img src={slideForm.desktop_image} alt="Desktop preview" />
-                                ) : (
-                                    <div className={styles.imagePlaceholder}><ImageIcon size={24} /></div>
-                                )}
-                                <input type="file" accept="image/*" ref={desktopInputRef} onChange={(e) => handleImageUpload(e, 'desktop')} />
-                            </div>
-
-                            <div className={styles.uploadBox}>
-                                <span>Mobile image</span>
-                                {slideForm.mobile_image ? (
-                                    <img src={slideForm.mobile_image} alt="Mobile preview" />
-                                ) : (
-                                    <div className={styles.imagePlaceholder}><ImageIcon size={24} /></div>
-                                )}
-                                <input type="file" accept="image/*" ref={mobileInputRef} onChange={(e) => handleImageUpload(e, 'mobile')} />
-                            </div>
-                        </div>
-
-                        <label className={styles.toggleRow}>
-                            <input type="checkbox" checked={slideForm.is_active} onChange={e => setSlideForm({ ...slideForm, is_active: e.target.checked })} />
-                            Active
-                        </label>
-
-                        <div className={styles.actions}>
-                            <button type="button" className={styles.secondaryBtn} onClick={() => setSlideForm(emptySlide)}>
-                                <X size={15} /> Clear
-                            </button>
-                            <button type="submit" className={styles.primaryBtn} disabled={saving}>
-                                {saving ? <Loader className={styles.spinner} /> : <Save size={15} />}
-                                {slideForm.id ? 'Update Slide' : 'Create Slide'}
-                            </button>
-                        </div>
-                    </form>
-
-                    <div className={styles.panel}>
-                        <h2>Hero Slides</h2>
-                        <div className={styles.list}>
-                            {slideList.length === 0 ? <p className={styles.empty}>No hero slides saved yet.</p> : slideList.map(slide => (
-                                <div key={slide.id} className={styles.listItem}>
-                                    {slide.desktop_image ? <img src={slide.desktop_image} alt={slide.title} /> : <div className={styles.listFallback} />}
-                                    <div className={styles.listContent}>
-                                        <strong>{slide.title || 'Untitled slide'}</strong>
-                                        <small>{slide.is_active ? 'Active' : 'Inactive'}</small>
-                                    </div>
-                                    <div className={styles.listActions}>
-                                        <button onClick={() => setSlideForm(slide)}><Pencil size={14} /></button>
-                                        <button onClick={() => handleDeleteSlide(slide.id)}><Trash2 size={14} /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {tab === 'announcements' && (
-                <div className={styles.grid}>
-                    <form onSubmit={handleAnnouncementSubmit} className={styles.panel}>
-                        <h2>{announcementForm.id ? 'Edit Announcement' : 'Add Announcement'}</h2>
-
-                        <label>
-                            Text
-                            <input value={announcementForm.text} onChange={e => setAnnouncementForm({ ...announcementForm, text: e.target.value })} required />
-                        </label>
-
-                        <label className={styles.toggleRow}>
-                            <input type="checkbox" checked={announcementForm.is_active} onChange={e => setAnnouncementForm({ ...announcementForm, is_active: e.target.checked })} />
-                            Active
-                        </label>
-
-                        <div className={styles.actions}>
-                            <button type="button" className={styles.secondaryBtn} onClick={() => setAnnouncementForm(emptyAnnouncement)}>
-                                <X size={15} /> Clear
-                            </button>
-                            <button type="submit" className={styles.primaryBtn} disabled={saving}>
-                                {saving ? <Loader className={styles.spinner} /> : <Plus size={15} />}
-                                {announcementForm.id ? 'Update' : 'Create'}
-                            </button>
-                        </div>
-                    </form>
-
-                    <div className={styles.panel}>
-                        <h2>Announcements</h2>
-                        <div className={styles.list}>
-                            {announcementList.length === 0 ? <p className={styles.empty}>No announcements yet.</p> : announcementList.map(item => (
-                                <div key={item.id} className={styles.listItem}>
-                                    <div className={styles.listContent}>
-                                        <strong>{item.text}</strong>
-                                        <small>{item.is_active ? 'Active' : 'Inactive'}</small>
-                                    </div>
-                                    <div className={styles.listActions}>
-                                        <button onClick={() => setAnnouncementForm(item)}><Pencil size={14} /></button>
-                                        <button onClick={() => handleDeleteAnnouncement(item.id)}><Trash2 size={14} /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {tab === 'settings' && (
-                <form onSubmit={handleSaveSettings} className={styles.panel}>
-                    <h2>Homepage Settings</h2>
-
-                    <div className={styles.fieldGrid}>
-                        <label>
-                            Hero autoplay
-                            <input type="checkbox" checked={Boolean(settings.hero_autoplay)} onChange={e => setSettings({ ...settings, hero_autoplay: e.target.checked })} />
-                        </label>
-                        <label>
-                            Autoplay speed (ms)
-                            <input type="number" value={settings.hero_autoplay_speed || 5000} onChange={e => setSettings({ ...settings, hero_autoplay_speed: Number(e.target.value) || 5000 })} />
-                        </label>
-                        <label>
-                            Animation speed (ms)
-                            <input type="number" value={settings.animation_speed || 600} onChange={e => setSettings({ ...settings, animation_speed: Number(e.target.value) || 600 })} />
-                        </label>
-
-                        <label>
-                            Category section title
-                            <input value={settings.categories_section?.title || ''} onChange={e => setSettings({
-                                ...settings,
-                                categories_section: { ...settings.categories_section, title: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Category section subtitle
-                            <input value={settings.categories_section?.subtitle || ''} onChange={e => setSettings({
-                                ...settings,
-                                categories_section: { ...settings.categories_section, subtitle: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Category section limit
-                            <input type="number" min="1" max="12" value={settings.categories_section?.limit || 5} onChange={e => setSettings({
-                                ...settings,
-                                categories_section: { ...settings.categories_section, limit: Number(e.target.value) || 5 },
-                            })} />
-                        </label>
-
-                        <label>
-                            Featured section title
-                            <input value={settings.featured_section?.title || ''} onChange={e => setSettings({
-                                ...settings,
-                                featured_section: { ...settings.featured_section, title: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Featured section subtitle
-                            <input value={settings.featured_section?.subtitle || ''} onChange={e => setSettings({
-                                ...settings,
-                                featured_section: { ...settings.featured_section, subtitle: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Featured section limit
-                            <input type="number" min="1" max="12" value={settings.featured_section?.limit || 8} onChange={e => setSettings({
-                                ...settings,
-                                featured_section: { ...settings.featured_section, limit: Number(e.target.value) || 8 },
-                            })} />
-                        </label>
-
-                        <label>
-                            Promo eyebrow
-                            <input value={settings.promo_section?.eyebrow || ''} onChange={e => setSettings({
-                                ...settings,
-                                promo_section: { ...settings.promo_section, eyebrow: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Promo title (one line per row)
-                            <textarea value={settings.promo_section?.title || ''} onChange={e => setSettings({
-                                ...settings,
-                                promo_section: { ...settings.promo_section, title: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Promo description
-                            <textarea value={settings.promo_section?.description || ''} onChange={e => setSettings({
-                                ...settings,
-                                promo_section: { ...settings.promo_section, description: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Promo button text
-                            <input value={settings.promo_section?.button_text || ''} onChange={e => setSettings({
-                                ...settings,
-                                promo_section: { ...settings.promo_section, button_text: e.target.value },
-                            })} />
-                        </label>
-
-                        <label>
-                            Promo button URL
-                            <input value={settings.promo_section?.button_url || ''} onChange={e => setSettings({
-                                ...settings,
-                                promo_section: { ...settings.promo_section, button_url: e.target.value },
-                            })} />
-                        </label>
-                    </div>
-
-                    <div className={styles.fieldGrid}>
-                        <label className={styles.toggleRow}>
-                            <input type="checkbox" checked={Boolean(settings.promo_section?.enabled !== false)} onChange={e => setSettings({
-                                ...settings,
-                                promo_section: { ...settings.promo_section, enabled: e.target.checked },
-                            })} />
-                            Show promotional section
-                        </label>
-                        <div className={styles.panel} style={{ padding: '1rem' }}>
-                            <h3>Category section visibility</h3>
-                            <label className={styles.toggleRow}>
-                                <input type="checkbox" checked={Boolean(settings.categories_section?.enabled !== false)} onChange={e => setSettings({
-                                    ...settings,
-                                    categories_section: { ...settings.categories_section, enabled: e.target.checked },
-                                })} />
-                                Show category section
-                            </label>
-
-                            <div style={{ display: 'grid', gap: '0.5rem', marginTop: '1rem' }}>
-                                {allCategories.map(category => (
-                                    <label key={category.id} className={styles.toggleRow} style={{ justifyContent: 'space-between' }}>
-                                        <span>{category.name}</span>
-                                        <input type="checkbox" checked={(settings.categories_section?.category_ids || []).includes(category.id)} onChange={() => toggleCategorySelection(category.id)} />
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className={styles.panel} style={{ padding: '1rem' }}>
-                            <h3>Featured section visibility</h3>
-                            <label className={styles.toggleRow}>
-                                <input type="checkbox" checked={Boolean(settings.featured_section?.enabled !== false)} onChange={e => setSettings({
-                                    ...settings,
-                                    featured_section: { ...settings.featured_section, enabled: e.target.checked },
-                                })} />
-                                Show featured products section
-                            </label>
-
-                            <div style={{ display: 'grid', gap: '0.5rem', marginTop: '1rem' }}>
-                                {allProducts.map(product => (
-                                    <label key={product.id} className={styles.toggleRow} style={{ justifyContent: 'space-between' }}>
-                                        <span>{product.name}</span>
-                                        <input type="checkbox" checked={(settings.featured_section?.product_ids || []).includes(product.id)} onChange={() => toggleProductSelection(product.id)} />
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className={styles.actions}>
-                        <button type="submit" className={styles.primaryBtn} disabled={saving}>
-                            {saving ? <Loader className={styles.spinner} /> : <Save size={15} />}
-                            Save Settings
-                        </button>
-                    </div>
-                </form>
-            )}
-        </div>
-    );
+    const [tab, setTab] = useState('Hero'); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [dirty, setDirty] = useState(false); const [published, setPublished] = useState(false); const [message, setMessage] = useState(''); const [error, setError] = useState('');
+    const [slides, setSlides] = useState([]); const [announcements, setAnnouncements] = useState([]); const [settings, setSettings] = useState(DEFAULTS); const [categories, setCategories] = useState([]); const [products, setProducts] = useState([]); const [selectedSlide, setSelectedSlide] = useState(null); const [previewMode, setPreviewMode] = useState('desktop'); const [productQuery, setProductQuery] = useState('');
+    useEffect(() => { (async () => { const [hero, ticker, config, cats, prods] = await Promise.all([cmsService.getHeroSlides(), cmsService.getAnnouncements(), cmsService.getSettings(), categoryService.getAll(), productService.getAll({ limit: 200 })]); setSlides(hero.data || []); setAnnouncements(ticker.data || []); setSettings(mergeSettings(config.data?.settings)); setPublished(config.data?.is_published ?? false); setCategories(cats.data || []); setProducts(prods.data || []); setLoading(false); })(); }, []);
+    function changeSettings(updater) { setSettings(prev => typeof updater === 'function' ? updater(prev) : updater); setDirty(true); setMessage(''); }
+    function updateSlide(id, patch) { setSlides(prev => prev.map(item => item.id === id ? { ...item, ...patch } : item)); setDirty(true); }
+    function updateAnnouncement(id, patch) { setAnnouncements(prev => prev.map(item => item.id === id ? { ...item, ...patch } : item)); setDirty(true); }
+    async function saveAll(makePublished = published) { const invalidSlide = slides.find(slide => !slide.title?.trim()); const invalidAnnouncement = announcements.find(item => !item.text?.trim()); if (invalidSlide || invalidAnnouncement) { setError(invalidSlide ? 'Each hero slide needs a title.' : 'Each announcement needs text.'); return; } setSaving(true); setError(''); setMessage(''); const snapshot = { slides: [...slides], announcements: [...announcements], settings, published }; try { const results = await Promise.all([cmsService.saveSettings(settings, makePublished), ...slides.map(slide => slide.id?.startsWith('new-') ? cmsService.createHeroSlide(slide) : cmsService.updateHeroSlide(slide.id, slide)), ...announcements.map(item => item.id?.startsWith('new-') ? cmsService.createAnnouncement(item) : cmsService.updateAnnouncement(item.id, item))]); const failed = results.find(result => result?.error); if (failed) throw new Error(failed.error.message || 'Unable to save homepage changes.'); setSlides(results.slice(1, 1 + slides.length).map((result, index) => result.data || slides[index])); setAnnouncements(results.slice(1 + slides.length).map((result, index) => result.data || announcements[index])); setPublished(makePublished); setDirty(false); setMessage(makePublished ? 'Homepage published.' : 'Draft saved.'); } catch (err) { setSlides(snapshot.slides); setAnnouncements(snapshot.announcements); setSettings(snapshot.settings); setPublished(snapshot.published); setError(err.message); } finally { setSaving(false); } }
+    async function removeSlide(id) { const previous = slides; setSlides(items => items.filter(item => item.id !== id)); setDirty(true); if (id) { const result = await cmsService.deleteHeroSlide(id); if (result.error) { setSlides(previous); setError(result.error.message); } } }
+    async function removeAnnouncement(id) { const previous = announcements; setAnnouncements(items => items.filter(item => item.id !== id)); setDirty(true); if (id) { const result = await cmsService.deleteAnnouncement(id); if (result.error) { setAnnouncements(previous); setError(result.error.message); } } }
+    if (loading) return <PageLoader />;
+    const activeSlide = slides.find(s => s.id === selectedSlide) || slides[0] || EMPTY_SLIDE;
+    const filteredProducts = products.filter(product => product.name?.toLowerCase().includes(productQuery.toLowerCase()));
+    return <div className={styles.page}>
+        <header className={styles.header}><div><span className={styles.kicker}>Content Studio</span><h1>Home Page CMS</h1><p>Shape the storefront experience, section by section.</p></div><div className={styles.actions}><span className={dirty ? styles.unsaved : styles.saved}>{dirty ? 'Unsaved changes' : 'All changes saved'}{dirty && <i />}</span><button className="btn btn--ghost" disabled={saving || !dirty} onClick={() => saveAll(false)}><Save size={15} /> Save Draft</button><button className="btn btn--primary" disabled={saving} onClick={() => saveAll(true)}><Check size={15} /> Save & Publish</button></div></header>
+        {message && <div className="alert alert--success">{message}</div>}{error && <div className="alert alert--danger">{error}</div>}
+        <div className={styles.workspace}><div className={styles.editor}><nav className={styles.tabs}>{TABS.map(item => <button key={item} className={tab === item ? styles.activeTab : ''} onClick={() => setTab(item)}>{item}</button>)}</nav>
+        {tab === 'Hero' && <HeroTab slides={slides} setSlides={setSlides} selectedSlide={selectedSlide} setSelectedSlide={setSelectedSlide} activeSlide={activeSlide} updateSlide={updateSlide} removeSlide={removeSlide} setDirty={setDirty} />}
+        {tab === 'Announcements' && <AnnouncementsTab items={announcements} setItems={setAnnouncements} update={updateAnnouncement} remove={removeAnnouncement} setDirty={setDirty} />}
+        {tab === 'Categories' && <CollectionTab section={settings.categories_section} items={categories} type="categories" update={section => changeSettings(prev => ({ ...prev, categories_section: section }))} />}
+        {tab === 'Featured Products' && <CollectionTab section={settings.featured_section} items={filteredProducts} type="products" query={productQuery} setQuery={setProductQuery} update={section => changeSettings(prev => ({ ...prev, featured_section: section }))} />}
+        {tab === 'Promo Banner' && <PromoTab section={settings.promo_section} update={section => changeSettings(prev => ({ ...prev, promo_section: section }))} />}
+        {tab === 'Features/Promise' && <FeaturesTab section={settings.features_section} update={section => changeSettings(prev => ({ ...prev, features_section: section }))} />}
+        {tab === 'Settings' && <SettingsTab settings={settings} published={published} setPublished={value => { setPublished(value); setDirty(true); }} update={changeSettings} />}
+        </div><aside className={styles.preview}><div className={styles.previewHeader}><div><span className={styles.kicker}>Live preview</span><b>{tab}</b></div><div className={styles.previewToggle}><button className={previewMode === 'desktop' ? styles.selected : ''} onClick={() => setPreviewMode('desktop')}>Desktop</button><button className={previewMode === 'mobile' ? styles.selected : ''} onClick={() => setPreviewMode('mobile')}>Mobile</button></div></div>{tab === 'Features/Promise' ? <SettingsPreview features={settings.features_section.items} /> : <HeroPreview slide={activeSlide} stats={settings.hero_stats} mode={previewMode} />}</aside></div>
+    </div>;
 }
+
+function HeroTab({ slides, setSlides, selectedSlide, setSelectedSlide, activeSlide, updateSlide, removeSlide, setDirty }) { function add() { const slide = { ...EMPTY_SLIDE, id: `new-${Date.now()}`, display_order: slides.length }; setSlides(prev => [...prev, slide]); setSelectedSlide(slide.id); setDirty(true); } function reorder(from, to) { setSlides(prev => move(prev, from, to)); setDirty(true); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Hero slides</h2><p>Manage the first impression and carousel order.</p></div><button className="btn btn--primary btn--sm" onClick={add}><Plus size={14} /> Add slide</button></div><div className={styles.split}><div className={styles.list}>{slides.length === 0 && <div className={styles.empty}>No slides yet. Add the first one.</div>}{slides.map((slide, index) => <div key={slide.id} draggable onDragStart={e => e.dataTransfer.setData('text/plain', index)} onDragOver={e => e.preventDefault()} onDrop={e => reorder(Number(e.dataTransfer.getData('text/plain')), index)} className={`${styles.listItem} ${selectedSlide === slide.id ? styles.selectedItem : ''}`}><GripVertical size={15} /><button onClick={() => setSelectedSlide(slide.id)}><b>{slide.title || 'Untitled slide'}</b><small>{index === 0 ? 'Primary slide · ' : ''}{slide.is_active ? 'Active' : 'Draft'}</small></button><div><button className="btn btn--icon btn--sm btn--ghost" onClick={() => reorder(index, Math.max(0, index - 1))} aria-label="Move slide up"><ArrowUp size={13} /></button><button className="btn btn--icon btn--sm btn--ghost" onClick={() => reorder(index, Math.min(slides.length - 1, index + 1))} aria-label="Move slide down"><ArrowDown size={13} /></button><button className="btn btn--icon btn--sm btn--ghost" onClick={() => removeSlide(slide.id)} aria-label="Delete slide"><Trash2 size={13} /></button></div></div>)}</div><div className={styles.form}>{activeSlide && <><div className={styles.formSection}><h3>Content</h3><div className={styles.formGrid}><Field label="Eyebrow" value={activeSlide.eyebrow || ''} onChange={e => updateSlide(activeSlide.id, { eyebrow: e.target.value })} /><Field label="Title" required value={activeSlide.title || ''} onChange={e => updateSlide(activeSlide.id, { title: e.target.value })} /><Field label="Subtitle" value={activeSlide.subtitle || ''} onChange={e => updateSlide(activeSlide.id, { subtitle: e.target.value })} /><Field label="Description" type="textarea" value={activeSlide.description || ''} onChange={e => updateSlide(activeSlide.id, { description: e.target.value })} /></div></div><div className={styles.formSection}><h3>Calls to action</h3><div className={styles.formGrid}><Field label="Primary text" value={activeSlide.primary_button_text || ''} onChange={e => updateSlide(activeSlide.id, { primary_button_text: e.target.value })} /><Field label="Primary URL" value={activeSlide.primary_button_url || ''} onChange={e => updateSlide(activeSlide.id, { primary_button_url: e.target.value })} /><Field label="Secondary text" value={activeSlide.secondary_button_text || ''} onChange={e => updateSlide(activeSlide.id, { secondary_button_text: e.target.value })} /><Field label="Secondary URL" value={activeSlide.secondary_button_url || ''} onChange={e => updateSlide(activeSlide.id, { secondary_button_url: e.target.value })} /></div></div><div className={styles.formSection}><h3>Media and motion</h3><div className={styles.formGrid}><label className={styles.field}><span>Media type</span><select value={activeSlide.media_type} onChange={e => updateSlide(activeSlide.id, { media_type: e.target.value })}><option value="image">Image</option><option value="video">Video</option></select></label><label className={styles.field}><span>Animation</span><select value={activeSlide.animation_type} onChange={e => updateSlide(activeSlide.id, { animation_type: e.target.value })}>{ANIMATIONS.map(item => <option key={item}>{item}</option>)}</select></label><Field label="Animation duration (ms)" type="number" min="0" value={activeSlide.animation_duration || 600} onChange={e => updateSlide(activeSlide.id, { animation_duration: Number(e.target.value) })} /><Field label="Background position" value={activeSlide.background_position || 'center'} onChange={e => updateSlide(activeSlide.id, { background_position: e.target.value })} /></div><UploadField label="Desktop image" value={activeSlide.desktop_image} onChange={value => updateSlide(activeSlide.id, { desktop_image: value })} folder="hero" /><UploadField label="Mobile image" value={activeSlide.mobile_image} onChange={value => updateSlide(activeSlide.id, { mobile_image: value })} folder="hero-mobile" />{activeSlide.media_type === 'video' && <UploadField label="Video URL" value={activeSlide.video_url} onChange={value => updateSlide(activeSlide.id, { video_url: value })} folder="hero-video" accept="video/mp4,video/webm" />}</div><Toggle label="Slide is active" checked={activeSlide.is_active !== false} onChange={value => updateSlide(activeSlide.id, { is_active: value })} /></>}</div></div></section>; }
+
+function AnnouncementsTab({ items, setItems, update, remove, setDirty }) { function add() { const item = { id: `new-${Date.now()}`, text: 'AUTHENTIC JERSEYS', display_order: items.length, is_active: true }; setItems(prev => [...prev, item]); setDirty(true); } function reorder(from, to) { setItems(prev => move(prev, from, to)); setDirty(true); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Announcement marquee</h2><p>Keep the scrolling brand message concise and current.</p></div><button className="btn btn--primary btn--sm" onClick={add}><Plus size={14} /> Add item</button></div><div className={styles.stack}>{items.map((item, index) => <div key={item.id} className={styles.announcement} draggable onDragStart={e => e.dataTransfer.setData('text/plain', index)} onDragOver={e => e.preventDefault()} onDrop={e => reorder(Number(e.dataTransfer.getData('text/plain')), index)}><GripVertical size={15} /><Field label={`Item ${index + 1}`} value={item.text || ''} onChange={e => update(item.id, { text: e.target.value })} /><Toggle label="Active" checked={item.is_active !== false} onChange={value => update(item.id, { is_active: value })} /><button className="btn btn--icon btn--sm btn--ghost" onClick={() => remove(item.id)} aria-label="Delete announcement"><Trash2 size={14} /></button></div>)}</div></section>; }
+
+function CollectionTab({ section, items, type, query, setQuery, update }) { const ids = (section[ type === 'categories' ? 'category_ids' : 'product_ids'] || []).map(String); const key = type === 'categories' ? 'category_ids' : 'product_ids'; function toggle(id) { const value = String(id); update({ ...section, [key]: ids.includes(value) ? ids.filter(item => item !== value) : [...ids, value] }); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>{type === 'categories' ? 'Categories section' : 'Featured products'}</h2><p>Choose and order the items visible on the storefront.</p></div><Toggle label="Section visible" checked={section.enabled !== false} onChange={enabled => update({ ...section, enabled })} /></div><div className={styles.formGrid}><Field label="Title" value={section.title || ''} onChange={e => update({ ...section, title: e.target.value })} /><Field label="Subtitle" value={section.subtitle || ''} onChange={e => update({ ...section, subtitle: e.target.value })} /><Field label="Item limit (1–12)" type="number" min="1" max="12" value={section.limit || 1} onChange={e => update({ ...section, limit: Math.min(12, Math.max(1, Number(e.target.value))) })} /></div>{type === 'products' && <Field label="Search products" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name" />}<div className={styles.checklist}>{items.map(item => <label key={item.id} className={styles.checkItem}><input type="checkbox" checked={ids.includes(String(item.id))} onChange={() => toggle(item.id)} /><span>{item.name || item.title}</span>{ids.includes(String(item.id)) && <Check size={14} />}</label>)}</div><div className={styles.selectionOrder}><b>Selected order</b>{ids.map((id, index) => <span key={id}>{index + 1}. {items.find(item => String(item.id) === id)?.name || items.find(item => String(item.id) === id)?.title || id}</span>)}</div></section>; }
+
+function PromoTab({ section, update }) { return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Promo banner</h2><p>Set the campaign copy and visual treatment.</p></div><Toggle label="Section visible" checked={section.enabled !== false} onChange={enabled => update({ ...section, enabled })} /></div><div className={styles.formGrid}><Field label="Eyebrow" value={section.eyebrow || ''} onChange={e => update({ ...section, eyebrow: e.target.value })} /><Field label="Button text" value={section.button_text || ''} onChange={e => update({ ...section, button_text: e.target.value })} /><Field label="Button URL" value={section.button_url || ''} onChange={e => update({ ...section, button_url: e.target.value })} /><Field label="Title (use new lines)" type="textarea" value={section.title || ''} onChange={e => update({ ...section, title: e.target.value })} /><Field label="Description" type="textarea" value={section.description || ''} onChange={e => update({ ...section, description: e.target.value })} /></div><UploadField label="Banner image" value={section.image} onChange={image => update({ ...section, image })} folder="promo" /></section>; }
+
+function FeaturesTab({ section, update }) { function patch(index, value) { update({ ...section, items: section.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item) }); } function add() { update({ ...section, items: [...section.items, { icon: 'Shield', title: 'New promise', description: '', order: section.items.length + 1 }] }); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Features / Promise</h2><p>Edit the trust signals beneath the campaign banner.</p></div><button className="btn btn--primary btn--sm" onClick={add}><Plus size={14} /> Add card</button></div><div className={styles.formGrid}><Field label="Section eyebrow" value={section.eyebrow || ''} onChange={e => update({ ...section, eyebrow: e.target.value })} /><Field label="Section title" value={section.title || ''} onChange={e => update({ ...section, title: e.target.value })} /></div><div className={styles.featureEditor}>{section.items.map((item, index) => <div className={styles.featureRow} key={`${item.title}-${index}`}><span className={styles.orderBadge}>{String(index + 1).padStart(2, '0')}</span><label className={styles.field}><span>Icon</span><select value={item.icon} onChange={e => patch(index, { icon: e.target.value })}>{ICONS.map(icon => <option key={icon}>{icon}</option>)}</select></label><Field label="Title" value={item.title} onChange={e => patch(index, { title: e.target.value })} /><Field label="Description" value={item.description} onChange={e => patch(index, { description: e.target.value })} /><button className="btn btn--icon btn--sm btn--ghost" onClick={() => update({ ...section, items: section.items.filter((_, itemIndex) => itemIndex !== index) })} aria-label="Delete promise card"><Trash2 size={14} /></button></div>)}</div></section>; }
+
+function SettingsTab({ settings, published, setPublished, update }) { function setStats(hero_stats) { update({ ...settings, hero_stats }); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Global settings</h2><p>Control motion, publication state, and hero proof points.</p></div><Toggle label={published ? 'Published' : 'Draft'} checked={published} onChange={setPublished} /></div><div className={styles.formGrid}><Toggle label="Hero autoplay" checked={settings.hero_autoplay !== false} onChange={hero_autoplay => update({ ...settings, hero_autoplay })} /><Field label="Autoplay speed (ms)" type="number" min="1000" value={settings.hero_autoplay_speed} onChange={e => update({ ...settings, hero_autoplay_speed: Number(e.target.value) })} /><Field label="Global animation speed (ms)" type="number" min="0" value={settings.animation_speed} onChange={e => update({ ...settings, animation_speed: Number(e.target.value) })} /></div><div className={styles.formSection}><div className={styles.inlineTitle}><h3>Hero stats</h3><button className="btn btn--ghost btn--sm" onClick={() => setStats([...settings.hero_stats, { number: '0+', label: 'New stat' }])}><Plus size={14} /> Add stat</button></div><div className={styles.statsEditor}>{settings.hero_stats.map((stat, index) => <div className={styles.statRow} key={index}><Field label="Number" value={stat.number} onChange={e => setStats(settings.hero_stats.map((item, itemIndex) => itemIndex === index ? { ...item, number: e.target.value } : item))} /><Field label="Label" value={stat.label} onChange={e => setStats(settings.hero_stats.map((item, itemIndex) => itemIndex === index ? { ...item, label: e.target.value } : item))} /><button className="btn btn--icon btn--sm btn--ghost" onClick={() => setStats(settings.hero_stats.filter((_, itemIndex) => itemIndex !== index))} aria-label="Delete stat"><Trash2 size={14} /></button></div>)}</div></div></section>; }

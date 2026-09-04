@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS public.homepage_hero_slides (
     secondary_button_url TEXT,
     desktop_image TEXT,
     mobile_image TEXT,
+    media_type TEXT DEFAULT 'image',
+    animation_type TEXT DEFAULT 'ken-burns',
+    animation_duration INTEGER DEFAULT 600,
+    video_url TEXT,
+    background_position TEXT DEFAULT 'center',
     display_order INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -50,6 +55,11 @@ ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS secondary_butto
 ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS secondary_button_url TEXT;
 ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS desktop_image TEXT;
 ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS mobile_image TEXT;
+ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS media_type TEXT DEFAULT 'image';
+ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS animation_type TEXT DEFAULT 'ken-burns';
+ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS animation_duration INTEGER DEFAULT 600;
+ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS background_position TEXT DEFAULT 'center';
 ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
 ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 ALTER TABLE public.homepage_hero_slides ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();

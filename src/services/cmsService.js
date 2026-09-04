@@ -2,8 +2,16 @@ import { supabase } from '../lib/supabase';
 
 function normalizeError(error) {
     if (!error) return null;
-    const message = error.message || 'Unable to load CMS data.';
-    return { message };
+    const normalized = {
+        message: error.message || 'Unable to load CMS data.',
+        code: error.code || '',
+        details: error.details || '',
+        hint: error.hint || '',
+    };
+    if (import.meta.env.DEV) {
+        console.error('[CMS] Supabase error:', normalized);
+    }
+    return normalized;
 }
 
 const HOMEPAGE_SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
@@ -15,20 +23,17 @@ function withoutCmsMetadata(record) {
 }
 
 export const cmsService = {
-    async getHeroSlides() {
+    async getHeroSlides({ activeOnly = false } = {}) {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('homepage_hero_slides')
-                .select('*')
+                .select('*');
+            if (activeOnly) query = query.eq('is_active', true);
+            const { data, error } = await query
                 .order('display_order', { ascending: true })
                 .order('created_at', { ascending: true });
 
-            if (error) {
-                if (/does not exist|could not find|schema cache|no such table/i.test(error.message)) {
-                    return { data: [], error: null };
-                }
-                return { data: [], error: normalizeError(error) };
-            }
+            if (error) return { data: [], error: normalizeError(error) };
 
             return { data: data || [], error: null };
         } catch (error) {
@@ -36,20 +41,15 @@ export const cmsService = {
         }
     },
 
-    async getAnnouncements() {
+    async getAnnouncements({ activeOnly = false } = {}) {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('announcement_items')
-                .select('*')
-                .eq('is_active', true)
-                .order('display_order', { ascending: true });
+                .select('*');
+            if (activeOnly) query = query.eq('is_active', true);
+            const { data, error } = await query.order('display_order', { ascending: true });
 
-            if (error) {
-                if (/does not exist|could not find|schema cache|no such table/i.test(error.message)) {
-                    return { data: [], error: null };
-                }
-                return { data: [], error: normalizeError(error) };
-            }
+            if (error) return { data: [], error: normalizeError(error) };
 
             return { data: data || [], error: null };
         } catch (error) {
@@ -57,20 +57,17 @@ export const cmsService = {
         }
     },
 
-    async getSettings() {
+    async getSettings({ publishedOnly = false } = {}) {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('homepage_settings')
-                .select('*')
+                .select('*');
+            if (publishedOnly) query = query.eq('is_published', true);
+            const { data, error } = await query
                 .order('updated_at', { ascending: false })
                 .limit(1);
 
-            if (error) {
-                if (/does not exist|could not find|schema cache|no such table/i.test(error.message)) {
-                    return { data: null, error: null };
-                }
-                return { data: null, error: normalizeError(error) };
-            }
+            if (error) return { data: null, error: normalizeError(error) };
 
             return { data: data?.[0] ?? null, error: null };
         } catch (error) {
@@ -78,24 +75,20 @@ export const cmsService = {
         }
     },
 
-    async saveSettings(settings) {
+    async saveSettings(settings, isPublished = true) {
         try {
             const { data, error } = await supabase
                 .from('homepage_settings')
                 .upsert({
                     id: HOMEPAGE_SETTINGS_ID,
                     settings,
+                    is_published: isPublished,
                     updated_at: new Date().toISOString(),
                 }, { onConflict: 'id' })
                 .select()
                 .single();
 
-            if (error) {
-                if (/does not exist|could not find|schema cache|no such table/i.test(error.message)) {
-                    return { data: null, error: { message: 'Homepage settings table is not available yet.' } };
-                }
-                return { data: null, error: normalizeError(error) };
-            }
+            if (error) return { data: null, error: normalizeError(error) };
 
             return { data, error: null };
         } catch (error) {
@@ -103,11 +96,19 @@ export const cmsService = {
         }
     },
 
-    async uploadCmsImage(file, folder = 'cms') {
+    async uploadHomepageMedia(file, folder = 'hero') {
         try {
-            const safeName = file.name.replace(/\s+/g, '-');
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            const maxSize = 10 * 1024 * 1024;
+            if (!allowedTypes.includes(file.type)) {
+                return { data: null, error: { message: 'Please upload a JPG, PNG, or WebP image.' } };
+            }
+            if (file.size > maxSize) {
+                return { data: null, error: { message: 'Images must be 10 MB or smaller.' } };
+            }
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '-');
             const path = `${folder}/${Date.now()}-${safeName}`;
-            const { error } = await supabase.storage.from('product-images').upload(path, file, {
+            const { error } = await supabase.storage.from('homepage-media').upload(path, file, {
                 upsert: true,
                 contentType: file.type,
             });
@@ -116,7 +117,7 @@ export const cmsService = {
                 return { data: null, error: normalizeError(error) };
             }
 
-            const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
+            const { data: urlData } = supabase.storage.from('homepage-media').getPublicUrl(path);
             return { data: urlData.publicUrl, error: null };
         } catch (error) {
             return { data: null, error: normalizeError(error) };
@@ -131,12 +132,7 @@ export const cmsService = {
                 .select()
                 .single();
 
-            if (error) {
-                if (/does not exist|could not find|schema cache|no such table/i.test(error.message)) {
-                    return { data: null, error: { message: 'Hero CMS table is not available yet.' } };
-                }
-                return { data: null, error: normalizeError(error) };
-            }
+            if (error) return { data: null, error: normalizeError(error) };
 
             return { data, error: null };
         } catch (error) {
@@ -178,12 +174,7 @@ export const cmsService = {
                 .select()
                 .single();
 
-            if (error) {
-                if (/does not exist|could not find|schema cache|no such table/i.test(error.message)) {
-                    return { data: null, error: { message: 'Announcement table is not available yet.' } };
-                }
-                return { data: null, error: normalizeError(error) };
-            }
+            if (error) return { data: null, error: normalizeError(error) };
 
             return { data, error: null };
         } catch (error) {

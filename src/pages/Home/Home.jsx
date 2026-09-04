@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { Fragment, useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     ArrowRight,
@@ -38,6 +38,8 @@ const MARQUEE_ITEMS = [
     'VERIFIED AUTHENTIC',
 ];
 
+const HOME_ICON_MAP = { Truck, Shield, RotateCcw, BadgeCheck };
+
 const DEFAULT_SETTINGS = {
     hero_autoplay: true,
     hero_autoplay_speed: 5000,
@@ -64,6 +66,21 @@ const DEFAULT_SETTINGS = {
         button_url: '/shop',
         image: '',
     },
+    features_section: {
+        eyebrow: 'Why Us',
+        title: 'The JerseyStore Promise',
+        items: [
+            { icon: 'Truck', title: 'Free Shipping', description: 'Free delivery on all orders above ₹999. Get your jersey hassle-free.', order: 1 },
+            { icon: 'BadgeCheck', title: '100% Authentic', description: 'Every jersey is sourced directly from official suppliers. Guaranteed real.', order: 2 },
+            { icon: 'RotateCcw', title: 'Easy Returns', description: 'Not the right fit? Return within 15 days for a full refund, no questions asked.', order: 3 },
+            { icon: 'Shield', title: 'Secure Payment', description: 'Industry-standard encryption protects your payment information always.', order: 4 },
+        ],
+    },
+    hero_stats: [
+        { number: '500+', label: 'Jerseys' },
+        { number: '50+', label: 'Brands' },
+        { number: '10K+', label: 'Fans' },
+    ],
 };
 
 export default function Home() {
@@ -85,18 +102,24 @@ export default function Home() {
     const categorySection = settings.categories_section || DEFAULT_SETTINGS.categories_section;
     const featuredSection = settings.featured_section || DEFAULT_SETTINGS.featured_section;
     const promoSection = settings.promo_section || DEFAULT_SETTINGS.promo_section;
+    const featuresSection = settings.features_section || DEFAULT_SETTINGS.features_section;
+    const heroStats = Array.isArray(settings.hero_stats) && settings.hero_stats.length ? settings.hero_stats : DEFAULT_SETTINGS.hero_stats;
 
     const visibleCategories = useMemo(() => {
         const selectedIds = (categorySection.category_ids || []).map(String);
         const limit = Number(categorySection.limit) || 5;
-        const source = selectedIds.length ? categories.filter(cat => selectedIds.includes(String(cat.id))) : categories;
+        const source = selectedIds.length
+            ? selectedIds.map(id => categories.find(cat => String(cat.id) === id)).filter(Boolean)
+            : categories;
         return source.slice(0, limit);
     }, [categories, categorySection]);
 
     const visibleFeaturedProducts = useMemo(() => {
         const selectedIds = (featuredSection.product_ids || []).map(String);
         const limit = Number(featuredSection.limit) || 8;
-        const source = selectedIds.length ? featured.filter(product => selectedIds.includes(String(product.id))) : featured;
+        const source = selectedIds.length
+            ? selectedIds.map(id => featured.find(product => String(product.id) === id)).filter(Boolean)
+            : featured;
         return source.slice(0, limit);
     }, [featured, featuredSection]);
 
@@ -108,9 +131,9 @@ export default function Home() {
                 const [featuredRes, catRes, heroRes, announcementRes, settingsRes] = await Promise.all([
                     productService.getFeatured(),
                     categoryService.getActive(),
-                    cmsService.getHeroSlides(),
-                    cmsService.getAnnouncements(),
-                    cmsService.getSettings(),
+                    cmsService.getHeroSlides({ activeOnly: true }),
+                    cmsService.getAnnouncements({ activeOnly: true }),
+                    cmsService.getSettings({ publishedOnly: true }),
                 ]);
 
                 setFeatured(featuredRes.data || []);
@@ -128,6 +151,14 @@ export default function Home() {
                         ...DEFAULT_SETTINGS.featured_section,
                         ...(settingsRes.data?.settings?.featured_section || {}),
                     },
+                    features_section: {
+                        ...DEFAULT_SETTINGS.features_section,
+                        ...(settingsRes.data?.settings?.features_section || {}),
+                        items: settingsRes.data?.settings?.features_section?.items || DEFAULT_SETTINGS.features_section.items,
+                    },
+                    hero_stats: Array.isArray(settingsRes.data?.settings?.hero_stats)
+                        ? settingsRes.data.settings.hero_stats
+                        : DEFAULT_SETTINGS.hero_stats,
                     promo_section: {
                         ...DEFAULT_SETTINGS.promo_section,
                         ...(settingsRes.data?.settings?.promo_section || {}),
@@ -171,9 +202,20 @@ export default function Home() {
     const heroPrimaryUrl = activeHeroSlide?.primary_button_url || '/shop';
     const heroSecondaryText = activeHeroSlide?.secondary_button_text || 'Explore Football';
     const heroSecondaryUrl = activeHeroSlide?.secondary_button_url || '/shop?category=football';
-    const heroDesktopImage = activeHeroSlide?.desktop_image || (featured[0]?.images?.[0] || featured[0]?.image || '');
+    const heroDesktopImage = activeHeroSlide?.desktop_image || '/hero-2026-27.png';
     const heroMobileImage = activeHeroSlide?.mobile_image || heroDesktopImage;
+    const heroMediaType = activeHeroSlide?.media_type || 'image';
+    const heroVideoUrl = activeHeroSlide?.video_url || '';
+    const heroAnimationType = activeHeroSlide?.animation_type || 'ken-burns';
+    const heroAnimationDuration = activeHeroSlide?.animation_duration || 600;
+    const heroBackgroundPosition = activeHeroSlide?.background_position || 'center';
     const featuredImage = featured[1]?.images?.[0] || featured[1]?.image || '';
+
+    // Animation styling overrides
+    const animationStyle = {
+        transitionDuration: `${heroAnimationDuration}ms`,
+        animationDuration: `${heroAnimationDuration}ms`
+    };
 
     return (
         <main ref={mainRef} className={styles.main}>
@@ -182,10 +224,31 @@ export default function Home() {
                 HERO — Cinematic editorial
             ══════════════════════════════════════ */}
             <section className={styles.hero} aria-label="Hero">
-                {/* Dark background */}
-                <div className={styles.heroBg} aria-hidden="true" />
-                {/* Accent gradient blob */}
-                <div className={styles.heroBlob} aria-hidden="true" />
+                <div className={styles.heroBg} aria-hidden="true">
+                    {heroMediaType === 'video' && heroVideoUrl ? (
+                        <video
+                            src={heroVideoUrl}
+                            className={styles.heroBgMedia}
+                            poster={heroDesktopImage || undefined}
+                            style={{ ...animationStyle, objectPosition: heroBackgroundPosition }}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                        />
+                    ) : heroDesktopImage ? (
+                        <picture>
+                            {heroMobileImage && <source media="(max-width: 767px)" srcSet={heroMobileImage} />}
+                            <img
+                                src={heroDesktopImage}
+                                alt=""
+                                className={`${styles.heroBgMedia} ${styles['anim-' + heroAnimationType] || ''}`}
+                                style={{ ...animationStyle, objectPosition: heroBackgroundPosition }}
+                            />
+                        </picture>
+                    ) : null}
+                    <div className={styles.heroOverlay} />
+                </div>
                 {/* Noise texture */}
                 <div className={styles.heroNoise} aria-hidden="true" />
 
@@ -230,59 +293,18 @@ export default function Home() {
 
                         {/* Stats strip */}
                         <div className={styles.heroStats}>
-                            <div className={styles.heroStat}>
-                                <span className={styles.heroStatNum}>500+</span>
-                                <span className={styles.heroStatLabel}>Jerseys</span>
-                            </div>
-                            <div className={styles.heroStatDivider} aria-hidden="true" />
-                            <div className={styles.heroStat}>
-                                <span className={styles.heroStatNum}>50+</span>
-                                <span className={styles.heroStatLabel}>Brands</span>
-                            </div>
-                            <div className={styles.heroStatDivider} aria-hidden="true" />
-                            <div className={styles.heroStat}>
-                                <span className={styles.heroStatNum}>10K+</span>
-                                <span className={styles.heroStatLabel}>Fans</span>
-                            </div>
+                            {heroStats.map((stat, index) => (
+                                <Fragment key={`${stat.number}-${stat.label}`}>
+                                    {index > 0 && <div key={`divider-${index}`} className={styles.heroStatDivider} aria-hidden="true" />}
+                                    <div className={styles.heroStat}>
+                                        <span className={styles.heroStatNum}>{stat.number}</span>
+                                        <span className={styles.heroStatLabel}>{stat.label}</span>
+                                    </div>
+                                </Fragment>
+                            ))}
                         </div>
                     </div>
 
-                    {/* ── Right: image composition ── */}
-                    <div className={`${styles.heroImage} ${heroReady ? styles.heroReady : ''}`} aria-hidden="true">
-                        <div className={styles.heroImageFrame}>
-                            {heroDesktopImage ? (
-                                <picture>
-                                    {heroMobileImage && <source media="(max-width: 767px)" srcSet={heroMobileImage} />}
-                                    <img
-                                        src={heroDesktopImage}
-                                        alt={heroTitle}
-                                        className={styles.heroImg}
-                                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
-                                    />
-                                </picture>
-                            ) : featured[0]?.images?.[0] || featured[0]?.image ? (
-                                <img
-                                    src={featured[0]?.images?.[0] || featured[0]?.image}
-                                    alt="Featured jersey"
-                                    className={styles.heroImg}
-                                />
-                            ) : (
-                                <div className={styles.heroImgPlaceholder}>
-                                    <div className={styles.heroImgPlaceholderInner}>
-                                        <span className={styles.heroImgIcon}>⚽</span>
-                                        <span className={styles.heroImgIconB}>🏀</span>
-                                        <span className={styles.heroImgIconC}>🏏</span>
-                                    </div>
-                                </div>
-                            )}
-                            {/* Floating accent label */}
-                            <div className={styles.heroFloatLabel}>
-                                <span>{activeHeroSlide?.subtitle || 'Season 2026/27'}</span>
-                            </div>
-                            {/* Corner accent */}
-                            <div className={styles.heroCornerAccent} aria-hidden="true" />
-                        </div>
-                    </div>
                 </div>
 
                 {/* Scroll indicator */}
@@ -385,80 +407,80 @@ export default function Home() {
                 FEATURED PRODUCTS
             ══════════════════════════════════════ */}
             {featuredSection.enabled !== false && (
-            <section className={styles.featuredSection}>
-                <div className={styles.sectionInner}>
-                    <div className={`${styles.sectionHeader} reveal`}>
-                        <div>
-                            <span className={styles.sectionEyebrow}>Handpicked</span>
-                            <h2 className={styles.sectionTitle}>{featuredSection.title || 'Featured Drop'}</h2>
-                            {featuredSection.subtitle && <p className={styles.sectionSub}>{featuredSection.subtitle}</p>}
-                        </div>
-                        <Link to="/shop" className={styles.sectionLink}>
-                            Shop All <ArrowRight size={14} strokeWidth={2.5} />
-                        </Link>
-                    </div>
-
-                    <div className="reveal">
-                        {loading ? (
-                            <ProductSkeleton count={8} />
-                        ) : visibleFeaturedProducts.length > 0 ? (
-                            <ProductGrid products={visibleFeaturedProducts} />
-                        ) : (
-                            <div className={styles.featuredEmpty}>
-                                <h3>Featured jerseys are coming soon.</h3>
-                                <p>Check back shortly for our latest drops.</p>
+                <section className={styles.featuredSection}>
+                    <div className={styles.sectionInner}>
+                        <div className={`${styles.sectionHeader} reveal`}>
+                            <div>
+                                <span className={styles.sectionEyebrow}>Handpicked</span>
+                                <h2 className={styles.sectionTitle}>{featuredSection.title || 'Featured Drop'}</h2>
+                                {featuredSection.subtitle && <p className={styles.sectionSub}>{featuredSection.subtitle}</p>}
                             </div>
-                        )}
+                            <Link to="/shop" className={styles.sectionLink}>
+                                Shop All <ArrowRight size={14} strokeWidth={2.5} />
+                            </Link>
+                        </div>
+
+                        <div className="reveal">
+                            {loading ? (
+                                <ProductSkeleton count={8} />
+                            ) : visibleFeaturedProducts.length > 0 ? (
+                                <ProductGrid products={visibleFeaturedProducts} />
+                            ) : (
+                                <div className={styles.featuredEmpty}>
+                                    <h3>Featured jerseys are coming soon.</h3>
+                                    <p>Check back shortly for our latest drops.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
             )}
 
             {/* ══════════════════════════════════════
                 PROMO BANNER — Cinematic campaign
             ══════════════════════════════════════ */}
             {promoSection.enabled !== false && (
-            <section className={styles.banner} aria-label="Promotional banner">
-                <div className={styles.bannerBg} aria-hidden="true" />
-                <div className={styles.bannerNoise} aria-hidden="true" />
-                <div className={styles.bannerInner}>
-                    {/* Left: text */}
-                    <div className={`${styles.bannerText} reveal`}>
-                        <span className={styles.bannerEyebrow}>{promoSection.eyebrow}</span>
-                        <h2 className={styles.bannerTitle}>
-                            {(promoSection.title || '').split('\n').map((line, index) => (
-                                <span key={`${line}-${index}`} className={index === 1 ? styles.bannerTitleAccent : ''}>
-                                    {line}{index < promoSection.title.split('\n').length - 1 && <br />}
-                                </span>
-                            ))}
-                        </h2>
-                        <p className={styles.bannerDesc}>{promoSection.description}</p>
-                        <Link to={promoSection.button_url || '/shop'} className={styles.bannerCta}>
-                            {promoSection.button_text || 'EXPLORE COLLECTION'}
-                            <ArrowRight size={16} strokeWidth={2.5} />
-                        </Link>
-                    </div>
+                <section className={styles.banner} aria-label="Promotional banner">
+                    <div className={styles.bannerBg} aria-hidden="true" />
+                    <div className={styles.bannerNoise} aria-hidden="true" />
+                    <div className={styles.bannerInner}>
+                        {/* Left: text */}
+                        <div className={`${styles.bannerText} reveal`}>
+                            <span className={styles.bannerEyebrow}>{promoSection.eyebrow}</span>
+                            <h2 className={styles.bannerTitle}>
+                                {(promoSection.title || '').split('\n').map((line, index) => (
+                                    <span key={`${line}-${index}`} className={index === 1 ? styles.bannerTitleAccent : ''}>
+                                        {line}{index < promoSection.title.split('\n').length - 1 && <br />}
+                                    </span>
+                                ))}
+                            </h2>
+                            <p className={styles.bannerDesc}>{promoSection.description}</p>
+                            <Link to={promoSection.button_url || '/shop'} className={styles.bannerCta}>
+                                {promoSection.button_text || 'EXPLORE COLLECTION'}
+                                <ArrowRight size={16} strokeWidth={2.5} />
+                            </Link>
+                        </div>
 
-                    {/* Right: image */}
-                    <div className={`${styles.bannerVisual} reveal reveal--right`} aria-hidden="true">
-                        {promoSection.image || featuredImage ? (
-                            <img
-                                src={promoSection.image || featuredImage}
-                                alt=""
-                                className={styles.bannerImg}
-                                loading="lazy"
-                                onError={(event) => { event.currentTarget.style.display = 'none'; }}
-                            />
-                        ) : (
-                            <div className={styles.bannerImgPlaceholder}>
-                                <span className={styles.bannerImgBig}>⚽</span>
-                                <div className={styles.bannerImgGlare} />
-                            </div>
-                        )}
-                        <div className={styles.bannerImageAccent} />
+                        {/* Right: image */}
+                        <div className={`${styles.bannerVisual} reveal reveal--right`} aria-hidden="true">
+                            {promoSection.image || featuredImage ? (
+                                <img
+                                    src={promoSection.image || featuredImage}
+                                    alt=""
+                                    className={styles.bannerImg}
+                                    loading="lazy"
+                                    onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                                />
+                            ) : (
+                                <div className={styles.bannerImgPlaceholder}>
+                                    <span className={styles.bannerImgBig}>⚽</span>
+                                    <div className={styles.bannerImgGlare} />
+                                </div>
+                            )}
+                            <div className={styles.bannerImageAccent} />
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
             )}
 
             {/* ══════════════════════════════════════
@@ -468,47 +490,25 @@ export default function Home() {
                 <div className={styles.sectionInner}>
                     <div className={`${styles.sectionHeader} reveal`}>
                         <div>
-                            <span className={styles.sectionEyebrow}>Why US</span>
-                            <h2 className={styles.sectionTitle}>The JerseyStore Promise</h2>
+                            <span className={styles.sectionEyebrow}>{featuresSection.eyebrow || 'Why Us'}</span>
+                            <h2 className={styles.sectionTitle}>{featuresSection.title || 'The JerseyStore Promise'}</h2>
                         </div>
                     </div>
 
                     <div className={`${styles.featureGrid} stagger-children`}>
-                        {[
-                            {
-                                Icon: Truck,
-                                title: 'Free Shipping',
-                                desc: 'Free delivery on all orders above ₹999. Get your jersey hassle-free.',
-                                num: '01',
-                            },
-                            {
-                                Icon: BadgeCheck,
-                                title: '100% Authentic',
-                                desc: 'Every jersey is sourced directly from official suppliers. Guaranteed real.',
-                                num: '02',
-                            },
-                            {
-                                Icon: RotateCcw,
-                                title: 'Easy Returns',
-                                desc: 'Not the right fit? Return within 15 days for a full refund, no questions asked.',
-                                num: '03',
-                            },
-                            {
-                                Icon: Shield,
-                                title: 'Secure Payment',
-                                desc: 'Industry-standard encryption protects your payment information always.',
-                                num: '04',
-                            },
-                        ].map(({ Icon, title, desc, num }) => (
-                            <div key={num} className={styles.featureCard}>
-                                <div className={styles.featureNum} aria-hidden="true">{num}</div>
+                        {(featuresSection.items || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0)).map((item, index) => {
+                            const Icon = HOME_ICON_MAP[item.icon] || BadgeCheck;
+                            return (
+                            <div key={`${item.title}-${index}`} className={styles.featureCard}>
+                                <div className={styles.featureNum} aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>
                                 <div className={styles.featureIconWrap}>
                                     <Icon size={22} strokeWidth={1.8} />
                                 </div>
-                                <h3 className={styles.featureTitle}>{title}</h3>
-                                <p className={styles.featureDesc}>{desc}</p>
+                                <h3 className={styles.featureTitle}>{item.title}</h3>
+                                <p className={styles.featureDesc}>{item.description}</p>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </section>
