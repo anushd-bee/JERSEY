@@ -15,6 +15,7 @@ import { productService } from '../../services/productService';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useStoreSettings } from '../../contexts/StoreSettingsContext';
 import { formatPrice } from '../../utils/helpers';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import ProductGallery from '../../components/ProductGallery/ProductGallery';
@@ -28,6 +29,7 @@ export default function ProductDetails() {
     const { addItem } = useCart();
     const { user } = useAuth();
     const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlist();
+    const { settings } = useStoreSettings();
 
     const [product, setProduct] = useState(null);
     const [related, setRelated] = useState([]);
@@ -353,7 +355,7 @@ export default function ProductDetails() {
                                 <Truck size={16} strokeWidth={2} />
                             </div>
                             <div className={styles.promiseText}>
-                                <h6>Free shipping over ₹999</h6>
+                                <h6>Free shipping over {formatPrice(settings.free_shipping_threshold)}</h6>
                                 <p>Standard delivery within 3-5 business days</p>
                             </div>
                         </div>
@@ -362,7 +364,7 @@ export default function ProductDetails() {
                                 <RotateCcw size={16} strokeWidth={2} />
                             </div>
                             <div className={styles.promiseText}>
-                                <h6>15-day easy returns</h6>
+                                <h6>{settings.return_period_days}-day easy returns</h6>
                                 <p>No questions asked return authorization</p>
                             </div>
                         </div>
@@ -398,8 +400,8 @@ export default function ProductDetails() {
                         </section>
                         <section>
                             <h2 className={styles.detailHeading}>Shipping & Returns</h2>
-                            <p>Free shipping over ₹999. Standard delivery within 3-5 business days.</p>
-                            <p>15-day returns on eligible items.</p>
+                            <p>Free shipping over {formatPrice(settings.free_shipping_threshold)}. Standard delivery within 3-5 business days.</p>
+                            <p>{settings.return_period_days}-day returns on eligible items.</p>
                         </section>
                         <section>
                             <h2 className={styles.detailHeading}>Product Features</h2>

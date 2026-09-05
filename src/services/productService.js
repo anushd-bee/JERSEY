@@ -6,7 +6,6 @@ export const productService = {
             .from('products')
             .select('*, categories(name, slug, image, is_active)', { count: 'exact' })
             .eq('is_active', true)
-            .or('is_offer.eq.false,is_offer.is.null')
             .range(offset, offset + limit - 1);
 
         // Filter by category slug — resolve to category_id via sub-select
@@ -108,7 +107,6 @@ export const productService = {
             .select('*, categories(name, slug)')
             .eq('is_active', true)
             .eq('is_featured', true)
-            .or('is_offer.eq.false,is_offer.is.null')
             .order('created_at', { ascending: false })
             .limit(8);
         return { data, error };
@@ -128,7 +126,6 @@ export const productService = {
             .select('*, categories(name, slug)')
             .eq('category_id', category.id)
             .eq('is_active', true)
-            .or('is_offer.eq.false,is_offer.is.null')
             .order('created_at', { ascending: false })
             .limit(limit);
         return { data, error };
@@ -141,7 +138,6 @@ export const productService = {
             .eq('category_id', categoryId)
             .eq('is_active', true)
             .neq('id', productId)
-            .or('is_offer.eq.false,is_offer.is.null')
             .order('created_at', { ascending: false })
             .limit(limit);
         return { data, error };

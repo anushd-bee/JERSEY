@@ -60,10 +60,30 @@
 .heroBg {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 80% 80% at 65% 40%,
-            rgba(20, 20, 30, 0.95),
-            #0A0A0A 100%),
-        linear-gradient(160deg, #0A0A0A 0%, #12121f 50%, #0A0A0A 100%);
+    background: #0A0A0A;
+}
+
+.heroBg picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.heroBgMedia {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.heroOverlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0.88) 0%,
+            rgba(0, 0, 0, 0.64) 45%,
+            rgba(0, 0, 0, 0.28) 100%);
 }
 
 /* Accent blob */
@@ -98,8 +118,7 @@
     margin: 0 auto;
     padding: var(--space-3xl) var(--space-md);
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-2xl);
+    grid-template-columns: minmax(0, 680px);
     align-items: center;
 }
 
@@ -257,7 +276,7 @@
         opacity var(--motion-slow) var(--ease-expo) 0ms;
 }
 
-.heroStat {}
+
 
 .heroStatNum {
     display: block;
@@ -286,11 +305,11 @@
 
 /* ── Hero image side ────────────────────────── */
 .heroImage {
-    display: none;
-    /* hidden on mobile */
+    display: flex;
     position: relative;
     justify-content: center;
     align-items: center;
+    padding-top: var(--space-xl);
 }
 
 .heroImageFrame {
@@ -794,7 +813,7 @@
     align-items: center;
 }
 
-.bannerText {}
+
 
 .bannerEyebrow {
     display: inline-block;
@@ -1016,18 +1035,8 @@
 
 @media (min-width: 768px) {
     .heroLayout {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 680px);
         padding: clamp(80px, 8vw, 112px) var(--space-xl);
-        gap: var(--space-3xl);
-    }
-
-    .heroImage {
-        display: flex;
-    }
-
-    .heroImageFrame {
-        width: 400px;
-        height: 480px;
     }
 
     .catGrid {
@@ -1076,10 +1085,6 @@
         padding: var(--space-4xl) var(--space-2xl);
     }
 
-    .heroImageFrame {
-        width: 440px;
-        height: 520px;
-    }
 }
 
 /* ── Reduced motion ─────────────────────────── */
@@ -1107,6 +1112,105 @@
     }
 
     .marqueeTrack {
+        animation: none !important;
+    }
+}
+
+/* CMS Animations */
+.heroBgMedia.anim-ken-burns {
+    animation-name: kenBurns;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+}
+
+@keyframes kenBurns {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.05);
+    }
+}
+
+.heroBgMedia.anim-slow-zoom {
+    animation-name: slowZoom;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+}
+
+@keyframes slowZoom {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.heroBgMedia.anim-fade {
+    animation-name: fadeIn;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.anim-slide {
+    animation-name: slideIn;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+}
+
+@keyframes slideIn {
+    0% {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.anim-parallax .heroImg {
+    animation-name: parallaxFloat;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate-reverse;
+}
+
+@keyframes parallaxFloat {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-10px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .anim-ken-burns .heroImg,
+    .anim-slow-zoom .heroImg,
+    .anim-fade,
+    .anim-slide,
+    .anim-parallax .heroImg {
         animation: none !important;
     }
 }

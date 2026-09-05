@@ -12,6 +12,7 @@ import {
     Tag,
     UserCheck,
     LogOut,
+    Settings
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageLoader } from '../../components/Loading/Loading';
@@ -26,6 +27,7 @@ const sidebarLinks = [
     { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
     { to: '/admin/customers', icon: Users, label: 'Customers' },
     { to: '/admin/categories', icon: FolderTree, label: 'Categories' },
+    { to: '/admin/settings', icon: Settings, label: 'Store Settings' },
 ];
 
 function linkClass({ isActive }) {

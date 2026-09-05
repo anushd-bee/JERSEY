@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { CreditCard, ArrowRight, ShieldCheck, ShoppingBag, Truck, Check } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useStoreSettings } from '../../contexts/StoreSettingsContext';
 import { orderService } from '../../services/orderService';
 import { formatPrice } from '../../utils/helpers';
 import styles from './Checkout.module.css';
@@ -34,6 +35,7 @@ export default function Checkout() {
     const navigate = useNavigate();
     const { items, totalPrice, clearCart } = useCart();
     const { user } = useAuth();
+    const { settings } = useStoreSettings();
     const [submitting, setSubmitting] = useState(false);
     const [step, setStep] = useState(1); // 1: Shipping, 2: Complete/Status
     const [successOrder, setSuccessOrder] = useState(null);
@@ -54,7 +56,9 @@ export default function Checkout() {
         },
     });
 
-    const shipping = totalPrice >= 999 ? 0 : 99;
+    const shippingThreshold = settings.free_shipping_threshold;
+    const baseShipping = settings.shipping_fee;
+    const shipping = totalPrice >= shippingThreshold ? 0 : baseShipping;
     const grandTotal = totalPrice + shipping;
 
     async function handlePaymentAndOrder(formData) {
@@ -78,6 +82,10 @@ export default function Checkout() {
                 user_id: user.id,
                 status: 'pending',
                 total: grandTotal,
+                subtotal: totalPrice,
+                shipping_amount: shipping,
+                tax_amount: 0,
+                discount_amount: 0,
                 shipping_address: formData,
                 payment_method: 'razorpay',
             };
@@ -310,7 +318,7 @@ export default function Checkout() {
                         </div>
                         <div className={styles.priceRow}>
                             <span>Shipping</span>
-                            <span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+                            <span>{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
                         </div>
 
                         <div className={styles.summaryDivider} />

@@ -377,6 +377,11 @@ export default function ProductFormModal({ isOpen, onClose, product, onSuccess }
                                 <span className={styles.toggleTrack} />
                                 <span className="form-label">Featured</span>
                             </label>
+                            <label className={styles.toggle}>
+                                <input type="checkbox" {...register('is_offer')} />
+                                <span className={styles.toggleTrack} />
+                                <span className="form-label">Show in Offers</span>
+                            </label>
                         </div>
 
                         {/* Images — Premium Uploader */}

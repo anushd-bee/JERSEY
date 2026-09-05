@@ -115,7 +115,7 @@ export default function Offer() {
                         <div className={styles.emptyIcon}>🏷️</div>
                         <h2 className={styles.emptyTitle}>No offers available right now.</h2>
                         <p className={styles.emptyDesc}>
-                            Check back soon — new deals are added regularly.
+                            Check back soon for the next drop.
                         </p>
                         <Link to="/shop" className={styles.emptyBtn}>
                             Browse All Jerseys

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ShieldCheck, RefreshCw, Truck } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
+import { useStoreSettings } from '../../contexts/StoreSettingsContext';
 import { formatPrice } from '../../utils/helpers';
 import useScrollReveal from '../../hooks/useScrollReveal';
 import styles from './Cart.module.css';
@@ -33,12 +34,14 @@ export default function Cart() {
         );
     }
 
-    const shippingThreshold = 999;
+    const { settings } = useStoreSettings();
+    const shippingThreshold = settings.free_shipping_threshold;
+    const baseShipping = settings.shipping_fee;
+
     const isFreeShipping = totalPrice >= shippingThreshold;
     const progressToFreeShipping = Math.min(100, (totalPrice / shippingThreshold) * 100);
     const amountNeededForFreeShipping = shippingThreshold - totalPrice;
 
-    const baseShipping = 99;
     const shipping = isFreeShipping ? 0 : baseShipping;
 
     // UI-only coupon discount (10% off for sample "JERSEY10")
@@ -74,10 +77,10 @@ export default function Cart() {
                             <Truck size={16} className={isFreeShipping ? styles.iconGreen : styles.iconMuted} />
                             <span>
                                 {isFreeShipping ? (
-                                    <strong>Congratulations! You get free shipping.</strong>
+                                    <strong>🎉 You unlocked FREE shipping!</strong>
                                 ) : (
                                     <>
-                                        Add <strong>{formatPrice(amountNeededForFreeShipping)}</strong> more for <strong>Free Shipping</strong>
+                                        Add <strong>{formatPrice(amountNeededForFreeShipping)}</strong> more for <strong>FREE shipping</strong>
                                     </>
                                 )}
                             </span>
@@ -169,7 +172,7 @@ export default function Cart() {
                             </div>
                             <div className={styles.summaryRow}>
                                 <span>Shipping</span>
-                                <span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+                                <span>{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
                             </div>
 
                             {couponApplied && (
@@ -232,7 +235,7 @@ export default function Cart() {
                             </div>
                             <div className={styles.trustItem}>
                                 <RefreshCw size={16} />
-                                <span>15-day return policy guarantee</span>
+                                <span>{settings.return_period_days}-day return policy guarantee</span>
                             </div>
                         </div>
 
