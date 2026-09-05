@@ -101,102 +101,105 @@ export default function AdminSettings() {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="custom-form">
-                    <div className="form-group row">
-                        <div style={{ flex: 1 }}>
-                            <label className="form-label">Shipping Fee (₹)</label>
+                {settings && (
+
+                    <form onSubmit={handleSubmit} className="custom-form">
+                        <div className="form-group row">
+                            <div style={{ flex: 1 }}>
+                                <label className="form-label">Shipping Fee (₹)</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={settings.shipping_fee}
+                                    onChange={e => handleChange('shipping_fee', Number(e.target.value))}
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label className="form-label">Free Shipping Threshold (₹)</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={settings.free_shipping_threshold}
+                                    onChange={e => handleChange('free_shipping_threshold', Number(e.target.value))}
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group row">
+                            <div style={{ flex: 1 }}>
+                                <label className="form-label">Default Offer Percentage (%)</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={settings.default_offer_percentage}
+                                    onChange={e => handleChange('default_offer_percentage', Number(e.target.value))}
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', paddingBottom: '10px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.offer_enabled}
+                                        onChange={e => handleChange('offer_enabled', e.target.checked)}
+                                        style={{ width: '18px', height: '18px' }}
+                                    />
+                                    <span className="form-label" style={{ margin: 0 }}>Enable Global Offers</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="form-group row">
+                            <div style={{ flex: 1 }}>
+                                <label className="form-label">Tax Percentage (%)</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={settings.tax_percentage}
+                                    onChange={e => handleChange('tax_percentage', Number(e.target.value))}
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', paddingBottom: '10px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.tax_enabled}
+                                        onChange={e => handleChange('tax_enabled', e.target.checked)}
+                                        style={{ width: '18px', height: '18px' }}
+                                    />
+                                    <span className="form-label" style={{ margin: 0 }}>Enable Tax Calculation</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Return Period (Days)</label>
                             <input
                                 type="number"
                                 className="form-input"
-                                value={settings.shipping_fee}
-                                onChange={e => handleChange('shipping_fee', Number(e.target.value))}
-                                min="0"
+                                value={settings.return_period_days}
+                                onChange={e => handleChange('return_period_days', Number(e.target.value))}
+                                min="1"
+                                style={{ maxWidth: 200 }}
                                 required
                             />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label className="form-label">Free Shipping Threshold (₹)</label>
-                            <input
-                                type="number"
-                                className="form-input"
-                                value={settings.free_shipping_threshold}
-                                onChange={e => handleChange('free_shipping_threshold', Number(e.target.value))}
-                                min="0"
-                                required
-                            />
-                        </div>
-                    </div>
 
-                    <div className="form-group row">
-                        <div style={{ flex: 1 }}>
-                            <label className="form-label">Default Offer Percentage (%)</label>
-                            <input
-                                type="number"
-                                className="form-input"
-                                value={settings.default_offer_percentage}
-                                onChange={e => handleChange('default_offer_percentage', Number(e.target.value))}
-                                min="0"
-                                max="100"
-                            />
+                        <div style={{ marginTop: '24px' }}>
+                            <button type="submit" className="btn btn--primary" disabled={saving}>
+                                <Save size={18} />
+                                {saving ? 'Saving...' : 'Save Settings'}
+                            </button>
                         </div>
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', paddingBottom: '10px' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.offer_enabled}
-                                    onChange={e => handleChange('offer_enabled', e.target.checked)}
-                                    style={{ width: '18px', height: '18px' }}
-                                />
-                                <span className="form-label" style={{ margin: 0 }}>Enable Global Offers</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="form-group row">
-                        <div style={{ flex: 1 }}>
-                            <label className="form-label">Tax Percentage (%)</label>
-                            <input
-                                type="number"
-                                className="form-input"
-                                value={settings.tax_percentage}
-                                onChange={e => handleChange('tax_percentage', Number(e.target.value))}
-                                min="0"
-                                max="100"
-                            />
-                        </div>
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', paddingBottom: '10px' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.tax_enabled}
-                                    onChange={e => handleChange('tax_enabled', e.target.checked)}
-                                    style={{ width: '18px', height: '18px' }}
-                                />
-                                <span className="form-label" style={{ margin: 0 }}>Enable Tax Calculation</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Return Period (Days)</label>
-                        <input
-                            type="number"
-                            className="form-input"
-                            value={settings.return_period_days}
-                            onChange={e => handleChange('return_period_days', Number(e.target.value))}
-                            min="1"
-                            style={{ maxWidth: 200 }}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ marginTop: '24px' }}>
-                        <button type="submit" className="btn btn--primary" disabled={saving}>
-                            <Save size={18} />
-                            {saving ? 'Saving...' : 'Save Settings'}
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                )}
             </div>
         </>
     );

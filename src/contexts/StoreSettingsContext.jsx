@@ -24,11 +24,11 @@ export function StoreSettingsProvider({ children }) {
             setSettings({
                 ...DEFAULT_SETTINGS,
                 ...data,
-                shipping_fee: Number(data.shipping_fee) || 0,
-                free_shipping_threshold: Number(data.free_shipping_threshold) || 0,
-                default_offer_percentage: Number(data.default_offer_percentage) || 0,
-                tax_percentage: Number(data.tax_percentage) || 0,
-                return_period_days: Number(data.return_period_days) || 15
+                shipping_fee: data.shipping_fee !== null ? Number(data.shipping_fee) : DEFAULT_SETTINGS.shipping_fee,
+                free_shipping_threshold: data.free_shipping_threshold !== null ? Number(data.free_shipping_threshold) : DEFAULT_SETTINGS.free_shipping_threshold,
+                default_offer_percentage: data.default_offer_percentage !== null ? Number(data.default_offer_percentage) : DEFAULT_SETTINGS.default_offer_percentage,
+                tax_percentage: data.tax_percentage !== null ? Number(data.tax_percentage) : DEFAULT_SETTINGS.tax_percentage,
+                return_period_days: data.return_period_days !== null ? Number(data.return_period_days) : DEFAULT_SETTINGS.return_period_days
             });
         }
         setLoading(false);
