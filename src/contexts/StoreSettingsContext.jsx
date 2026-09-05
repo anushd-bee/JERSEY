@@ -6,11 +6,12 @@ const StoreSettingsContext = createContext(null);
 const DEFAULT_SETTINGS = {
     shipping_fee: 99,
     free_shipping_threshold: 999,
-    offer_enabled: false,
+    enable_global_offers: false,
     default_offer_percentage: 0,
-    tax_enabled: false,
+    enable_tax_calculation: false,
     tax_percentage: 0,
     return_period_days: 15,
+    currency: 'INR'
 };
 
 export function StoreSettingsProvider({ children }) {
@@ -28,7 +29,8 @@ export function StoreSettingsProvider({ children }) {
                 free_shipping_threshold: data.free_shipping_threshold !== null ? Number(data.free_shipping_threshold) : DEFAULT_SETTINGS.free_shipping_threshold,
                 default_offer_percentage: data.default_offer_percentage !== null ? Number(data.default_offer_percentage) : DEFAULT_SETTINGS.default_offer_percentage,
                 tax_percentage: data.tax_percentage !== null ? Number(data.tax_percentage) : DEFAULT_SETTINGS.tax_percentage,
-                return_period_days: data.return_period_days !== null ? Number(data.return_period_days) : DEFAULT_SETTINGS.return_period_days
+                return_period_days: data.return_period_days !== null ? Number(data.return_period_days) : DEFAULT_SETTINGS.return_period_days,
+                currency: data.currency || DEFAULT_SETTINGS.currency
             });
         }
         setLoading(false);
