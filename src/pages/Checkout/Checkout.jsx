@@ -58,7 +58,7 @@ export default function Checkout() {
 
     const shippingThreshold = settings.free_shipping_threshold;
     const baseShipping = settings.shipping_fee;
-    const shipping = totalPrice >= shippingThreshold ? 0 : baseShipping;
+    const shipping = (settings.free_shipping_enabled && totalPrice >= shippingThreshold) ? 0 : baseShipping;
     const grandTotal = totalPrice + shipping;
 
     async function handlePaymentAndOrder(formData) {

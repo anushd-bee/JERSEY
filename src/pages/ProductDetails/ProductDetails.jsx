@@ -409,7 +409,7 @@ export default function ProductDetails() {
                         </section>
                         <section>
                             <h2 className={styles.detailHeading}>Reviews</h2>
-                            <p>No reviews yet</p>
+                            <p>Be the first to review this product.</p>
                         </section>
                     </div>
                 </div>

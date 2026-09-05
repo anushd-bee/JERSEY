@@ -38,8 +38,8 @@ export default function Cart() {
     const shippingThreshold = settings.free_shipping_threshold;
     const baseShipping = settings.shipping_fee;
 
-    const isFreeShipping = totalPrice >= shippingThreshold;
-    const progressToFreeShipping = Math.min(100, (totalPrice / shippingThreshold) * 100);
+    const isFreeShipping = settings.free_shipping_enabled && totalPrice >= shippingThreshold;
+    const progressToFreeShipping = settings.free_shipping_enabled ? Math.min(100, (totalPrice / shippingThreshold) * 100) : 0;
     const amountNeededForFreeShipping = shippingThreshold - totalPrice;
 
     const shipping = isFreeShipping ? 0 : baseShipping;

@@ -1,7 +1,13 @@
-export function formatPrice(amount) {
+let currentCurrency = 'INR';
+
+export function setGlobalCurrency(currencyCode) {
+    if (currencyCode) currentCurrency = currencyCode;
+}
+
+export function formatPrice(amount, currencyCode = currentCurrency) {
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'INR',
+        currency: currencyCode,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(amount);

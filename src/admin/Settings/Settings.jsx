@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, AlertCircle, CheckCircle, Truck, Tag, Percent, RotateCcw, Globe } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Truck, Tag, Percent, RotateCcw, Globe, Info } from 'lucide-react';
 import { storeSettingsService } from '../../services/storeSettingsService';
 import { useStoreSettings } from '../../contexts/StoreSettingsContext';
 import { PageLoader } from '../../components/Loading/Loading';
@@ -19,22 +19,32 @@ export default function AdminSettings() {
 
     async function loadSettings() {
         setLoading(true);
-        const { data, error } = await storeSettingsService.getSettings();
-        if (error) {
-            setError('Failed to load settings.');
-        } else {
+        try {
+            const { data, error } = await storeSettingsService.getSettings();
+            if (error) {
+                setError('Failed to load database settings. Creating defaults...');
+            }
+            // Safely initialize with all specific fields requested to prevent rendering crashes
             setSettings(data || {
-                shipping_fee: 99,
+                store_name: 'Jersey Store',
+                currency_code: 'INR',
+                currency_symbol: '₹',
+                shipping_fee: 50,
                 free_shipping_threshold: 999,
-                enable_global_offers: false,
+                free_shipping_enabled: true,
+                global_offer_enabled: false,
                 default_offer_percentage: 0,
-                enable_tax_calculation: false,
+                tax_enabled: false,
                 tax_percentage: 0,
-                return_period_days: 15,
-                currency: 'INR'
+                return_enabled: true,
+                return_period_days: 15
             });
+        } catch (err) {
+            console.error(err);
+            setError('Runtime exception connecting to settings service.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     const handleChange = (field, value) => {
@@ -42,12 +52,14 @@ export default function AdminSettings() {
     };
 
     const validate = () => {
-        if (settings.shipping_fee < 0) return 'Shipping fee cannot be negative.';
-        if (settings.free_shipping_threshold < 0) return 'Free shipping threshold cannot be negative.';
-        if (settings.default_offer_percentage < 0 || settings.default_offer_percentage > 100) return 'Offer percentage must be between 0 and 100.';
-        if (settings.tax_percentage < 0 || settings.tax_percentage > 100) return 'Tax percentage must be between 0 and 100.';
-        if (settings.return_period_days <= 0) return 'Return period must be greater than 0.';
-        if (!settings.currency) return 'Currency code is required.';
+        if (!settings.store_name?.trim()) return 'Store name is required.';
+        if (settings.shipping_fee < 0 || isNaN(settings.shipping_fee)) return 'Shipping fee must be 0 or greater.';
+        if (settings.free_shipping_threshold < 0 || isNaN(settings.free_shipping_threshold)) return 'Free shipping threshold cannot be negative.';
+        if (settings.default_offer_percentage < 0 || settings.default_offer_percentage > 100 || isNaN(settings.default_offer_percentage)) return 'Offer percentage must be between 0 and 100.';
+        if (settings.tax_percentage < 0 || settings.tax_percentage > 100 || isNaN(settings.tax_percentage)) return 'Tax percentage must be between 0 and 100.';
+        if (settings.return_period_days < 0 || isNaN(settings.return_period_days)) return 'Return period cannot be negative.';
+        if (!settings.currency_code || settings.currency_code.length !== 3) return 'Currency code must be exactly 3 characters.';
+        if (!settings.currency_symbol?.trim()) return 'Currency symbol is required.';
         return null;
     };
 
@@ -63,19 +75,26 @@ export default function AdminSettings() {
         }
 
         setSaving(true);
-        const { data, error } = await storeSettingsService.updateSettings(settings.id, {
-            shipping_fee: settings.shipping_fee,
-            free_shipping_threshold: settings.free_shipping_threshold,
-            enable_global_offers: settings.enable_global_offers,
-            default_offer_percentage: settings.default_offer_percentage,
-            enable_tax_calculation: settings.enable_tax_calculation,
-            tax_percentage: settings.tax_percentage,
-            return_period_days: settings.return_period_days,
-            currency: settings.currency || 'INR'
-        });
+        // Coerce strictly to types
+        const updates = {
+            store_name: settings.store_name,
+            currency_code: settings.currency_code.toUpperCase(),
+            currency_symbol: settings.currency_symbol,
+            shipping_fee: Number(settings.shipping_fee),
+            free_shipping_threshold: Number(settings.free_shipping_threshold),
+            free_shipping_enabled: Boolean(settings.free_shipping_enabled),
+            global_offer_enabled: Boolean(settings.global_offer_enabled),
+            default_offer_percentage: Number(settings.default_offer_percentage),
+            tax_enabled: Boolean(settings.tax_enabled),
+            tax_percentage: Number(settings.tax_percentage),
+            return_enabled: Boolean(settings.return_enabled),
+            return_period_days: Number(settings.return_period_days)
+        };
+
+        const { data, error } = await storeSettingsService.updateSettings(settings.id, updates);
 
         if (error) {
-            setError(error.message || 'Failed to update settings.');
+            setError(error.message || 'Failed to update settings. Verify RLS policies and table schema.');
         } else {
             setSettings(data);
             await refreshSettings();
@@ -115,21 +134,35 @@ export default function AdminSettings() {
                             <div className={styles.cardHeader}>
                                 <h2 className={styles.cardTitle}>
                                     <Truck size={20} className={styles.cardTitleIcon} />
-                                    Shipping Defaults
+                                    Shipping & Delivery
                                 </h2>
                                 <p className={styles.cardDesc}>Configure base shipping fees and conditions for free shipping.</p>
                             </div>
                             <div className={styles.cardBody}>
+                                <div className={styles.toggleWrapper}>
+                                    <div className={styles.toggleInfo}>
+                                        <span className={styles.toggleLabel}>Enable Free Shipping Rule</span>
+                                        <span className={styles.toggleDesc}>When disabled, the base shipping fee always applies.</span>
+                                    </div>
+                                    <label className="toggle-switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.free_shipping_enabled}
+                                            onChange={e => handleChange('free_shipping_enabled', e.target.checked)}
+                                        />
+                                        <span className="toggle-slider"></span>
+                                    </label>
+                                </div>
                                 <div className={styles.formRow}>
                                     <div className={styles.formCol}>
                                         <label className="form-label">Base Shipping Fee</label>
                                         <div className={styles.inputGroup}>
-                                            <span className={styles.inputPrefix}>₹</span>
+                                            <span className={styles.inputPrefix}>{settings.currency_symbol}</span>
                                             <input
                                                 type="number"
                                                 className={`form-input ${styles.inputWithPrefix}`}
                                                 value={settings.shipping_fee}
-                                                onChange={e => handleChange('shipping_fee', Number(e.target.value))}
+                                                onChange={e => handleChange('shipping_fee', e.target.value)}
                                                 min="0"
                                             />
                                         </div>
@@ -137,13 +170,14 @@ export default function AdminSettings() {
                                     <div className={styles.formCol}>
                                         <label className="form-label">Free Shipping Threshold</label>
                                         <div className={styles.inputGroup}>
-                                            <span className={styles.inputPrefix}>₹</span>
+                                            <span className={styles.inputPrefix}>{settings.currency_symbol}</span>
                                             <input
                                                 type="number"
                                                 className={`form-input ${styles.inputWithPrefix}`}
                                                 value={settings.free_shipping_threshold}
-                                                onChange={e => handleChange('free_shipping_threshold', Number(e.target.value))}
+                                                onChange={e => handleChange('free_shipping_threshold', e.target.value)}
                                                 min="0"
+                                                disabled={!settings.free_shipping_enabled}
                                             />
                                         </div>
                                         <span className={styles.inputHelp}>
@@ -154,14 +188,50 @@ export default function AdminSettings() {
                             </div>
                         </div>
 
-                        {/* B. Offers Config Card */}
+                        {/* B. Currency */}
+                        <div className={styles.card}>
+                            <div className={styles.cardHeader}>
+                                <h2 className={styles.cardTitle}>
+                                    <Globe size={20} className={styles.cardTitleIcon} />
+                                    Currency
+                                </h2>
+                                <p className={styles.cardDesc}>Storefront formatting defaults.</p>
+                            </div>
+                            <div className={styles.cardBody}>
+                                <div className={styles.formRow}>
+                                    <div className={styles.formCol}>
+                                        <label className="form-label">Currency Code</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={settings.currency_code}
+                                            onChange={e => handleChange('currency_code', e.target.value.toUpperCase())}
+                                            maxLength={3}
+                                            placeholder="INR"
+                                        />
+                                    </div>
+                                    <div className={styles.formCol}>
+                                        <label className="form-label">Currency Symbol</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={settings.currency_symbol}
+                                            onChange={e => handleChange('currency_symbol', e.target.value)}
+                                            placeholder="₹"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* C. Offers & Discounts */}
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <h2 className={styles.cardTitle}>
                                     <Tag size={20} className={styles.cardTitleIcon} />
-                                    Global Offers
+                                    Offers & Discounts
                                 </h2>
-                                <p className={styles.cardDesc}>Manage store-wide discount behavior and tagging.</p>
+                                <p className={styles.cardDesc}>Manage store-wide discount behavior.</p>
                             </div>
                             <div className={styles.cardBody}>
                                 <div className={styles.toggleWrapper}>
@@ -172,8 +242,8 @@ export default function AdminSettings() {
                                     <label className="toggle-switch">
                                         <input
                                             type="checkbox"
-                                            checked={settings.enable_global_offers || false}
-                                            onChange={e => handleChange('enable_global_offers', e.target.checked)}
+                                            checked={settings.global_offer_enabled}
+                                            onChange={e => handleChange('global_offer_enabled', e.target.checked)}
                                         />
                                         <span className="toggle-slider"></span>
                                     </label>
@@ -186,16 +256,17 @@ export default function AdminSettings() {
                                             type="number"
                                             className={`form-input ${styles.inputWithPrefix}`}
                                             value={settings.default_offer_percentage}
-                                            onChange={e => handleChange('default_offer_percentage', Number(e.target.value))}
+                                            onChange={e => handleChange('default_offer_percentage', e.target.value)}
                                             min="0"
                                             max="100"
+                                            disabled={!settings.global_offer_enabled}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* C. Taxation Card */}
+                        {/* D. Tax Card */}
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <h2 className={styles.cardTitle}>
@@ -212,8 +283,8 @@ export default function AdminSettings() {
                                     <label className="toggle-switch">
                                         <input
                                             type="checkbox"
-                                            checked={settings.enable_tax_calculation || false}
-                                            onChange={e => handleChange('enable_tax_calculation', e.target.checked)}
+                                            checked={settings.tax_enabled}
+                                            onChange={e => handleChange('tax_enabled', e.target.checked)}
                                         />
                                         <span className="toggle-slider"></span>
                                     </label>
@@ -226,16 +297,17 @@ export default function AdminSettings() {
                                             type="number"
                                             className={`form-input ${styles.inputWithPrefix}`}
                                             value={settings.tax_percentage}
-                                            onChange={e => handleChange('tax_percentage', Number(e.target.value))}
+                                            onChange={e => handleChange('tax_percentage', e.target.value)}
                                             min="0"
                                             max="100"
+                                            disabled={!settings.tax_enabled}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* D. Returns Card */}
+                        {/* E. Returns Card */}
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <h2 className={styles.cardTitle}>
@@ -244,14 +316,29 @@ export default function AdminSettings() {
                                 </h2>
                             </div>
                             <div className={styles.cardBody}>
+                                <div className={styles.toggleWrapper}>
+                                    <div className={styles.toggleInfo}>
+                                        <span className={styles.toggleLabel}>Enable Returns</span>
+                                        <span className={styles.toggleDesc}>Show return period details on the product page.</span>
+                                    </div>
+                                    <label className="toggle-switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.return_enabled}
+                                            onChange={e => handleChange('return_enabled', e.target.checked)}
+                                        />
+                                        <span className="toggle-slider"></span>
+                                    </label>
+                                </div>
                                 <div className={styles.formCol} style={{ maxWidth: '300px' }}>
                                     <label className="form-label">Return Window (Days)</label>
                                     <input
                                         type="number"
                                         className="form-input"
                                         value={settings.return_period_days}
-                                        onChange={e => handleChange('return_period_days', Number(e.target.value))}
-                                        min="1"
+                                        onChange={e => handleChange('return_period_days', e.target.value)}
+                                        min="0"
+                                        disabled={!settings.return_enabled}
                                     />
                                     <span className={styles.inputHelp}>
                                         Displayed dynamically on product detail pages.
@@ -260,30 +347,23 @@ export default function AdminSettings() {
                             </div>
                         </div>
 
-                        {/* E. Store Config Card */}
+                        {/* F. Store Information */}
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <h2 className={styles.cardTitle}>
-                                    <Globe size={20} className={styles.cardTitleIcon} />
-                                    Localization
+                                    <Info size={20} className={styles.cardTitleIcon} />
+                                    Store Information
                                 </h2>
                             </div>
                             <div className={styles.cardBody}>
-                                <div className={styles.formCol} style={{ maxWidth: '300px' }}>
-                                    <label className="form-label">Base Currency</label>
-                                    <select
+                                <div className={styles.formCol}>
+                                    <label className="form-label">Store Name</label>
+                                    <input
+                                        type="text"
                                         className="form-input"
-                                        value={settings.currency || 'INR'}
-                                        onChange={e => handleChange('currency', e.target.value)}
-                                    >
-                                        <option value="INR">INR (₹)</option>
-                                        <option value="USD">USD ($)</option>
-                                        <option value="EUR">EUR (€)</option>
-                                        <option value="GBP">GBP (£)</option>
-                                    </select>
-                                    <span className={styles.inputHelp}>
-                                        The operating currency of the storefront checkout.
-                                    </span>
+                                        value={settings.store_name}
+                                        onChange={e => handleChange('store_name', e.target.value)}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -295,7 +375,6 @@ export default function AdminSettings() {
                                 {saving ? 'Saving...' : 'Save Settings'}
                             </button>
                         </div>
-
                     </form>
                 )}
             </div>

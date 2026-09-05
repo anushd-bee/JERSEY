@@ -1,17 +1,23 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { storeSettingsService } from '../services/storeSettingsService';
 
+import { setGlobalCurrency } from '../utils/helpers';
+
 const StoreSettingsContext = createContext(null);
 
 const DEFAULT_SETTINGS = {
-    shipping_fee: 99,
+    store_name: 'Jersey Store',
+    currency_code: 'INR',
+    currency_symbol: '₹',
+    shipping_fee: 50,
     free_shipping_threshold: 999,
-    enable_global_offers: false,
+    free_shipping_enabled: true,
+    global_offer_enabled: false,
     default_offer_percentage: 0,
-    enable_tax_calculation: false,
+    tax_enabled: false,
     tax_percentage: 0,
-    return_period_days: 15,
-    currency: 'INR'
+    return_enabled: true,
+    return_period_days: 15
 };
 
 export function StoreSettingsProvider({ children }) {
@@ -20,18 +26,30 @@ export function StoreSettingsProvider({ children }) {
 
     async function loadSettings() {
         setLoading(true);
-        const { data } = await storeSettingsService.getSettings();
-        if (data) {
-            setSettings({
-                ...DEFAULT_SETTINGS,
-                ...data,
-                shipping_fee: data.shipping_fee !== null ? Number(data.shipping_fee) : DEFAULT_SETTINGS.shipping_fee,
-                free_shipping_threshold: data.free_shipping_threshold !== null ? Number(data.free_shipping_threshold) : DEFAULT_SETTINGS.free_shipping_threshold,
-                default_offer_percentage: data.default_offer_percentage !== null ? Number(data.default_offer_percentage) : DEFAULT_SETTINGS.default_offer_percentage,
-                tax_percentage: data.tax_percentage !== null ? Number(data.tax_percentage) : DEFAULT_SETTINGS.tax_percentage,
-                return_period_days: data.return_period_days !== null ? Number(data.return_period_days) : DEFAULT_SETTINGS.return_period_days,
-                currency: data.currency || DEFAULT_SETTINGS.currency
-            });
+        try {
+            const { data } = await storeSettingsService.getSettings();
+            if (data) {
+                const newSettings = {
+                    ...DEFAULT_SETTINGS,
+                    ...data,
+                    store_name: data.store_name || DEFAULT_SETTINGS.store_name,
+                    currency_code: data.currency_code || DEFAULT_SETTINGS.currency_code,
+                    currency_symbol: data.currency_symbol || DEFAULT_SETTINGS.currency_symbol,
+                    shipping_fee: data.shipping_fee !== null ? Number(data.shipping_fee) : DEFAULT_SETTINGS.shipping_fee,
+                    free_shipping_threshold: data.free_shipping_threshold !== null ? Number(data.free_shipping_threshold) : DEFAULT_SETTINGS.free_shipping_threshold,
+                    free_shipping_enabled: data.free_shipping_enabled !== null ? Boolean(data.free_shipping_enabled) : DEFAULT_SETTINGS.free_shipping_enabled,
+                    global_offer_enabled: data.global_offer_enabled !== null ? Boolean(data.global_offer_enabled) : DEFAULT_SETTINGS.global_offer_enabled,
+                    default_offer_percentage: data.default_offer_percentage !== null ? Number(data.default_offer_percentage) : DEFAULT_SETTINGS.default_offer_percentage,
+                    tax_enabled: data.tax_enabled !== null ? Boolean(data.tax_enabled) : DEFAULT_SETTINGS.tax_enabled,
+                    tax_percentage: data.tax_percentage !== null ? Number(data.tax_percentage) : DEFAULT_SETTINGS.tax_percentage,
+                    return_enabled: data.return_enabled !== null ? Boolean(data.return_enabled) : DEFAULT_SETTINGS.return_enabled,
+                    return_period_days: data.return_period_days !== null ? Number(data.return_period_days) : DEFAULT_SETTINGS.return_period_days
+                };
+                setSettings(newSettings);
+                setGlobalCurrency(newSettings.currency_code);
+            }
+        } catch (err) {
+            console.error("Failed to load settings:", err);
         }
         setLoading(false);
     }
