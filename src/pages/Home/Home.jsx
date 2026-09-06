@@ -457,14 +457,13 @@ export default function Home() {
                 PROMO BANNER — Cinematic campaign
             ══════════════════════════════════════ */}
             {promoSection.enabled !== false && promoSection.image && (
-                <section aria-label="Promotional banner" style={{
+                <section aria-label="Promotional poster" style={{
                     width: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: '60px 5vw'
+                    margin: 0,
+                    padding: 0,
+                    display: 'block'
                 }}>
-                    <Link to="/shop" style={{ width: '100%', maxWidth: '1400px', display: 'block', margin: '0 auto' }}>
+                    <Link to="/shop" style={{ width: '100%', display: 'block' }}>
                         <img
                             src={promoSection.image}
                             alt="Promo Poster"
@@ -472,10 +471,8 @@ export default function Home() {
                             style={{
                                 width: '100%',
                                 height: 'auto',
-                                objectFit: 'contain',
                                 display: 'block',
-                                borderRadius: 'calc(var(--radius-lg, 12px) * 0.8)',
-                                boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+                                objectFit: 'contain'
                             }}
                             loading="lazy"
                             onError={(event) => { event.currentTarget.style.display = 'none'; }}
