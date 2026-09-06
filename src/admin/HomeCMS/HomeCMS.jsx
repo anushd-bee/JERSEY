@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, GripVertical, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, GripVertical, Plus, Save, Trash2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
 import { cmsService } from '../../services/cmsService';
@@ -60,7 +60,75 @@ function AnnouncementsTab({ items, setItems, update, remove, setDirty }) { funct
 
 function CollectionTab({ section, items, type, query, setQuery, update }) { const ids = (section[type === 'categories' ? 'category_ids' : 'product_ids'] || []).map(String); const key = type === 'categories' ? 'category_ids' : 'product_ids'; function toggle(id) { const value = String(id); update({ ...section, [key]: ids.includes(value) ? ids.filter(item => item !== value) : [...ids, value] }); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>{type === 'categories' ? 'Categories section' : 'Featured products'}</h2><p>Choose and order the items visible on the storefront.</p></div><Toggle label="Section visible" checked={section.enabled !== false} onChange={enabled => update({ ...section, enabled })} /></div><div className={styles.formGrid}><Field label="Title" value={section.title || ''} onChange={e => update({ ...section, title: e.target.value })} /><Field label="Subtitle" value={section.subtitle || ''} onChange={e => update({ ...section, subtitle: e.target.value })} /><Field label="Item limit (1–12)" type="number" min="1" max="12" value={section.limit || 1} onChange={e => update({ ...section, limit: Math.min(12, Math.max(1, Number(e.target.value))) })} /></div>{type === 'products' && <Field label="Search products" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name" />}<div className={styles.checklist}>{items.map(item => <label key={item.id} className={styles.checkItem}><input type="checkbox" checked={ids.includes(String(item.id))} onChange={() => toggle(item.id)} /><span>{item.name || item.title}</span>{ids.includes(String(item.id)) && <Check size={14} />}</label>)}</div><div className={styles.selectionOrder}><b>Selected order</b>{ids.map((id, index) => <span key={id}>{index + 1}. {items.find(item => String(item.id) === id)?.name || items.find(item => String(item.id) === id)?.title || id}</span>)}</div></section>; }
 
-function PromoTab({ section, update }) { return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Promo banner</h2><p>Set the campaign copy and visual treatment.</p></div><Toggle label="Section visible" checked={section.enabled !== false} onChange={enabled => update({ ...section, enabled })} /></div><div className={styles.formGrid}><Field label="Eyebrow" value={section.eyebrow || ''} onChange={e => update({ ...section, eyebrow: e.target.value })} /><Field label="Button text" value={section.button_text || ''} onChange={e => update({ ...section, button_text: e.target.value })} /><Field label="Button URL" value={section.button_url || ''} onChange={e => update({ ...section, button_url: e.target.value })} /><Field label="Title (use new lines)" type="textarea" value={section.title || ''} onChange={e => update({ ...section, title: e.target.value })} /><Field label="Description" type="textarea" value={section.description || ''} onChange={e => update({ ...section, description: e.target.value })} /></div><UploadField label="Banner image" value={section.image} onChange={image => update({ ...section, image })} folder="promo" /></section>; }
+function PromoTab({ section, update }) {
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState('');
+
+    async function handleUpload(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        setError('');
+        const result = await cmsService.uploadHomepageMedia(file, 'promo');
+        if (result.error) setError(result.error.message);
+        else update({ ...section, image: result.data });
+        setUploading(false);
+    }
+
+    return (
+        <section className={styles.panel}>
+            <div className={styles.panelTitle}>
+                <div>
+                    <h2>Promo Banner</h2>
+                    <p>Upload a poster image to be shown on the homepage.</p>
+                </div>
+                <Toggle label="Section visible" checked={section.enabled !== false} onChange={enabled => update({ ...section, enabled })} />
+            </div>
+
+            <div style={{ marginTop: '20px' }}>
+                {!section.image ? (
+                    <label style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        padding: '40px 20px', border: '1.5px dashed var(--border)', borderRadius: 'var(--radius-md)',
+                        background: 'var(--background)', cursor: uploading ? 'wait' : 'pointer', textAlign: 'center'
+                    }}>
+                        <ImageIcon size={48} style={{ color: 'var(--muted)', marginBottom: '16px' }} strokeWidth={1} />
+                        <b style={{ fontSize: '14px', marginBottom: '6px' }}>Upload Promo Banner Image</b>
+                        <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '16px' }}>
+                            Drag and drop an image here, or click to upload
+                        </p>
+                        <small style={{ color: 'var(--muted)', fontSize: '11px', lineHeight: 1.5, marginBottom: '20px' }}>
+                            Recommended size: 1920 x 700 px (16:9)<br />
+                            Format: JPG, PNG, WEBP (Max 5MB)
+                        </small>
+                        <span className="btn btn--secondary btn--sm" style={{ pointerEvents: 'none' }}>
+                            <Upload size={14} /> {uploading ? 'Uploading...' : 'Choose Image'}
+                        </span>
+                        <input type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={handleUpload} disabled={uploading} />
+                    </label>
+                ) : (
+                    <div style={{ position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={section.image} alt="Promo preview" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'cover' }} />
+                        <button
+                            type="button"
+                            onClick={() => update({ ...section, image: '' })}
+                            style={{
+                                position: 'absolute', top: '10px', right: '10px', width: '28px', height: '28px',
+                                background: 'white', color: 'black', borderRadius: '50%', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            }}
+                            aria-label="Remove image"
+                        >
+                            <X size={16} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                )}
+                {error && <div className={styles.fieldError} style={{ marginTop: '10px' }}>{error}</div>}
+            </div>
+        </section>
+    );
+}
 
 function FeaturesTab({ section, update }) { function patch(index, value) { update({ ...section, items: section.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item) }); } function add() { update({ ...section, items: [...section.items, { icon: 'Shield', title: 'New promise', description: '', order: section.items.length + 1 }] }); } return <section className={styles.panel}><div className={styles.panelTitle}><div><h2>Features / Promise</h2><p>Edit the trust signals beneath the campaign banner.</p></div><button className="btn btn--primary btn--sm" onClick={add}><Plus size={14} /> Add card</button></div><div className={styles.formGrid}><Field label="Section eyebrow" value={section.eyebrow || ''} onChange={e => update({ ...section, eyebrow: e.target.value })} /><Field label="Section title" value={section.title || ''} onChange={e => update({ ...section, title: e.target.value })} /></div><div className={styles.featureEditor}>{section.items.map((item, index) => <div className={styles.featureRow} key={`${item.title}-${index}`}><span className={styles.orderBadge}>{String(index + 1).padStart(2, '0')}</span><label className={styles.field}><span>Icon</span><select value={item.icon} onChange={e => patch(index, { icon: e.target.value })}>{ICONS.map(icon => <option key={icon}>{icon}</option>)}</select></label><Field label="Title" value={item.title} onChange={e => patch(index, { title: e.target.value })} /><Field label="Description" value={item.description} onChange={e => patch(index, { description: e.target.value })} /><button className="btn btn--icon btn--sm btn--ghost" onClick={() => update({ ...section, items: section.items.filter((_, itemIndex) => itemIndex !== index) })} aria-label="Delete promise card"><Trash2 size={14} /></button></div>)}</div></section>; }
 

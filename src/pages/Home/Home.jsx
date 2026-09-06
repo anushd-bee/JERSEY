@@ -461,40 +461,26 @@ export default function Home() {
                     <div className={styles.bannerBg} aria-hidden="true" />
                     <div className={styles.bannerNoise} aria-hidden="true" />
                     <div className={styles.bannerInner}>
-                        {/* Left: text */}
-                        <div className={`${styles.bannerText} reveal`}>
-                            <span className={styles.bannerEyebrow}>{promoSection.eyebrow}</span>
-                            <h2 className={styles.bannerTitle}>
-                                {(promoSection.title || '').split('\n').map((line, index) => (
-                                    <span key={`${line}-${index}`} className={index === 1 ? styles.bannerTitleAccent : ''}>
-                                        {line}{index < promoSection.title.split('\n').length - 1 && <br />}
-                                    </span>
-                                ))}
-                            </h2>
-                            <p className={styles.bannerDesc}>{promoSection.description}</p>
-                            <Link to={promoSection.button_url || '/shop'} className={styles.bannerCta}>
-                                {promoSection.button_text || 'EXPLORE COLLECTION'}
-                                <ArrowRight size={16} strokeWidth={2.5} />
-                            </Link>
-                        </div>
+                        {/* Pure graphical poster mode as requested */}
 
-                        {/* Right: image */}
-                        <div className={`${styles.bannerVisual} reveal reveal--right`} aria-hidden="true">
-                            {promoSection.image || featuredImage ? (
-                                <img
-                                    src={promoSection.image || featuredImage}
-                                    alt=""
-                                    className={styles.bannerImg}
-                                    loading="lazy"
-                                    onError={(event) => { event.currentTarget.style.display = 'none'; }}
-                                />
+                        {/* Image poster spreading across the section */}
+                        <div className="reveal" style={{ width: '100%', height: '100%', display: 'flex' }} aria-hidden="true">
+                            {promoSection.image ? (
+                                <Link to={promoSection.button_url || '/shop'} style={{ width: '100%', display: 'block' }}>
+                                    <img
+                                        src={promoSection.image}
+                                        style={{ width: '100%', height: 'auto', maxHeight: '700px', objectFit: 'cover', borderRadius: 'var(--radius-lg)' }}
+                                        alt="Promo Banner"
+                                        loading="lazy"
+                                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                                    />
+                                </Link>
                             ) : (
-                                <div className={styles.bannerImgPlaceholder}>
+                                <div className={styles.bannerImgPlaceholder} style={{ width: '100%', minHeight: '300px' }}>
                                     <span className={styles.bannerImgBig}>⚽</span>
                                     <div className={styles.bannerImgGlare} />
                                 </div>
                             )}
-                            <div className={styles.bannerImageAccent} />
                         </div>
                     </div>
                 </section>
