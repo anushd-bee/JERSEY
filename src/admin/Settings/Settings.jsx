@@ -25,20 +25,23 @@ export default function AdminSettings() {
             if (error) {
                 setError('Failed to load database settings. Creating defaults...');
             }
-            // Safely initialize with all specific fields requested to prevent rendering crashes
-            setSettings(data || {
-                store_name: 'Jersey Store',
-                currency_code: 'INR',
-                currency_symbol: '₹',
-                shipping_fee: 50,
-                free_shipping_threshold: 999,
-                free_shipping_enabled: true,
-                global_offer_enabled: false,
-                default_offer_percentage: 0,
-                tax_enabled: false,
-                tax_percentage: 0,
-                return_enabled: true,
-                return_period_days: 15
+
+            // Strictly normalize incoming data, ensuring numeric 0 is preserved
+            // and strings are trimmed to prevent invisible validation bypass failures.
+            setSettings({
+                id: data?.id || undefined,
+                store_name: data?.store_name?.trim() || 'Jersey Store',
+                currency_code: (data?.currency_code || 'INR').trim().toUpperCase(),
+                currency_symbol: (data?.currency_symbol || '₹').trim(),
+                shipping_fee: data?.shipping_fee ?? 50,
+                free_shipping_threshold: data?.free_shipping_threshold ?? 999,
+                free_shipping_enabled: data?.free_shipping_enabled ?? true,
+                global_offer_enabled: data?.global_offer_enabled ?? false,
+                default_offer_percentage: data?.default_offer_percentage ?? 0,
+                tax_enabled: data?.tax_enabled ?? false,
+                tax_percentage: data?.tax_percentage ?? 0,
+                return_enabled: data?.return_enabled ?? true,
+                return_period_days: data?.return_period_days ?? 15
             });
         } catch (err) {
             console.error(err);
@@ -76,28 +79,43 @@ export default function AdminSettings() {
         }
 
         setSaving(true);
-        // Coerce strictly to types
+        // Coerce strictly to types and trim spaces from string values
         const updates = {
-            store_name: settings.store_name,
-            currency_code: settings.currency_code.toUpperCase(),
-            currency_symbol: settings.currency_symbol,
-            shipping_fee: Number(settings.shipping_fee),
-            free_shipping_threshold: Number(settings.free_shipping_threshold),
+            store_name: settings.store_name.trim(),
+            currency_code: settings.currency_code.trim().toUpperCase(),
+            currency_symbol: settings.currency_symbol.trim(),
+            shipping_fee: Number(settings.shipping_fee) || 0, // Catch NaN
+            free_shipping_threshold: Number(settings.free_shipping_threshold) || 0,
             free_shipping_enabled: Boolean(settings.free_shipping_enabled),
             global_offer_enabled: Boolean(settings.global_offer_enabled),
-            default_offer_percentage: Number(settings.default_offer_percentage),
+            default_offer_percentage: Number(settings.default_offer_percentage) || 0,
             tax_enabled: Boolean(settings.tax_enabled),
-            tax_percentage: Number(settings.tax_percentage),
+            tax_percentage: Number(settings.tax_percentage) || 0,
             return_enabled: Boolean(settings.return_enabled),
-            return_period_days: Number(settings.return_period_days)
+            return_period_days: Number(settings.return_period_days) || 0
         };
 
-        const { data, error } = await storeSettingsService.updateSettings(settings.id, updates);
+        const { data, error } = await storeSettingsService.updateSettings(updates);
 
         if (error) {
             setError(error.message || 'Failed to update settings. Verify RLS policies and table schema.');
         } else {
-            setSettings(data);
+            // Instantly refresh UI state with normalized DB response
+            setSettings({
+                id: data?.id,
+                store_name: data?.store_name || updates.store_name,
+                currency_code: data?.currency_code || updates.currency_code,
+                currency_symbol: data?.currency_symbol || updates.currency_symbol,
+                shipping_fee: data?.shipping_fee ?? updates.shipping_fee,
+                free_shipping_threshold: data?.free_shipping_threshold ?? updates.free_shipping_threshold,
+                free_shipping_enabled: data?.free_shipping_enabled ?? updates.free_shipping_enabled,
+                global_offer_enabled: data?.global_offer_enabled ?? updates.global_offer_enabled,
+                default_offer_percentage: data?.default_offer_percentage ?? updates.default_offer_percentage,
+                tax_enabled: data?.tax_enabled ?? updates.tax_enabled,
+                tax_percentage: data?.tax_percentage ?? updates.tax_percentage,
+                return_enabled: data?.return_enabled ?? updates.return_enabled,
+                return_period_days: data?.return_period_days ?? updates.return_period_days
+            });
             await refreshSettings();
             setSuccess('Store settings updated successfully.');
             setTimeout(() => setSuccess(''), 4000);

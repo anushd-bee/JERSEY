@@ -5,29 +5,20 @@ export const storeSettingsService = {
         const { data, error } = await supabase
             .from('store_settings')
             .select('*')
-            .limit(1)
-            .maybeSingle();
+            .single(); // Guaranteed by singleton constraint
 
         return { data, error };
     },
 
-    async updateSettings(id, updates) {
-        if (id) {
-            const { data, error } = await supabase
-                .from('store_settings')
-                .update(updates)
-                .eq('id', id)
-                .select()
-                .single();
-            return { data, error };
-        } else {
-            // If the table is empty and no ID provided, insert
-            const { data, error } = await supabase
-                .from('store_settings')
-                .insert(updates)
-                .select()
-                .single();
-            return { data, error };
-        }
+    async updateSettings(updates) {
+        // Safe update for single-row config using the singleton lock
+        const { data, error } = await supabase
+            .from('store_settings')
+            .update(updates)
+            .eq('singleton_id', 1)
+            .select()
+            .single();
+
+        return { data, error };
     }
 };

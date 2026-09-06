@@ -119,11 +119,15 @@ Deno.serve(async (req) => {
 
         // --- Fetch store settings for shipping/tax/discount rules ---
         console.log('[RAZORPAY DEBUG] SETTINGS_QUERY');
-        const { data: settings } = await supabaseAdmin
+        const { data: settings, error: settingsError } = await supabaseAdmin
             .from('store_settings')
             .select('*')
-            .limit(1)
-            .maybeSingle();
+            .single();
+
+        if (settingsError) {
+            console.error('[RAZORPAY DEBUG] SETTINGS_QUERY error:', settingsError);
+            return json({ error: 'Failed to access store settings.' }, 500);
+        }
 
         const shippingFee = Number(settings?.shipping_fee ?? 50);
         const freeShippingThreshold = Number(settings?.free_shipping_threshold ?? 999);

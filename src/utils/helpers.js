@@ -8,12 +8,12 @@ export const SUPPORTED_CURRENCIES = [
 ];
 
 export function isSupportedCurrency(currencyCode) {
-    return SUPPORTED_CURRENCIES.includes(String(currencyCode || '').toUpperCase());
+    return SUPPORTED_CURRENCIES.includes(String(currencyCode || '').trim().toUpperCase());
 }
 
 export function setGlobalCurrency(currencyCode) {
     if (currencyCode && isSupportedCurrency(currencyCode)) {
-        currentCurrency = currencyCode.toUpperCase();
+        currentCurrency = String(currencyCode).trim().toUpperCase();
     } else if (currencyCode) {
         console.warn(`Unsupported currency code "${currencyCode}" — falling back to INR.`);
         currentCurrency = 'INR';

@@ -35,15 +35,15 @@ export function StoreSettingsProvider({ children }) {
                     store_name: data.store_name || DEFAULT_SETTINGS.store_name,
                     currency_code: data.currency_code || DEFAULT_SETTINGS.currency_code,
                     currency_symbol: data.currency_symbol || DEFAULT_SETTINGS.currency_symbol,
-                    shipping_fee: data.shipping_fee !== null ? Number(data.shipping_fee) : DEFAULT_SETTINGS.shipping_fee,
-                    free_shipping_threshold: data.free_shipping_threshold !== null ? Number(data.free_shipping_threshold) : DEFAULT_SETTINGS.free_shipping_threshold,
-                    free_shipping_enabled: data.free_shipping_enabled !== null ? Boolean(data.free_shipping_enabled) : DEFAULT_SETTINGS.free_shipping_enabled,
-                    global_offer_enabled: data.global_offer_enabled !== null ? Boolean(data.global_offer_enabled) : DEFAULT_SETTINGS.global_offer_enabled,
-                    default_offer_percentage: data.default_offer_percentage !== null ? Number(data.default_offer_percentage) : DEFAULT_SETTINGS.default_offer_percentage,
-                    tax_enabled: data.tax_enabled !== null ? Boolean(data.tax_enabled) : DEFAULT_SETTINGS.tax_enabled,
-                    tax_percentage: data.tax_percentage !== null ? Number(data.tax_percentage) : DEFAULT_SETTINGS.tax_percentage,
-                    return_enabled: data.return_enabled !== null ? Boolean(data.return_enabled) : DEFAULT_SETTINGS.return_enabled,
-                    return_period_days: data.return_period_days !== null ? Number(data.return_period_days) : DEFAULT_SETTINGS.return_period_days
+                    shipping_fee: data.shipping_fee ?? DEFAULT_SETTINGS.shipping_fee,
+                    free_shipping_threshold: data.free_shipping_threshold ?? DEFAULT_SETTINGS.free_shipping_threshold,
+                    free_shipping_enabled: data.free_shipping_enabled ?? DEFAULT_SETTINGS.free_shipping_enabled,
+                    global_offer_enabled: data.global_offer_enabled ?? DEFAULT_SETTINGS.global_offer_enabled,
+                    default_offer_percentage: data.default_offer_percentage ?? DEFAULT_SETTINGS.default_offer_percentage,
+                    tax_enabled: data.tax_enabled ?? DEFAULT_SETTINGS.tax_enabled,
+                    tax_percentage: data.tax_percentage ?? DEFAULT_SETTINGS.tax_percentage,
+                    return_enabled: data.return_enabled ?? DEFAULT_SETTINGS.return_enabled,
+                    return_period_days: data.return_period_days ?? DEFAULT_SETTINGS.return_period_days
                 };
                 setSettings(newSettings);
                 setGlobalCurrency(newSettings.currency_code);

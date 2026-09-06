@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS public.store_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_name TEXT NOT NULL DEFAULT 'Jersey Store',
+    currency_code TEXT NOT NULL DEFAULT 'INR',
+    currency_symbol TEXT NOT NULL DEFAULT '₹',
+    shipping_fee NUMERIC(10,2) NOT NULL DEFAULT 50 CHECK (shipping_fee >= 0),
+    free_shipping_threshold NUMERIC(10,2) NOT NULL DEFAULT 999 CHECK (free_shipping_threshold >= 0),
+    free_shipping_enabled BOOLEAN NOT NULL DEFAULT true,
+    global_offer_enabled BOOLEAN NOT NULL DEFAULT false,
+    default_offer_percentage NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (default_offer_percentage >= 0 AND default_offer_percentage <= 100),
+    tax_enabled BOOLEAN NOT NULL DEFAULT false,
+    tax_percentage NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (tax_percentage >= 0 AND tax_percentage <= 100),
+    return_enabled BOOLEAN NOT NULL DEFAULT true,
+    return_period_days INTEGER NOT NULL DEFAULT 15 CHECK (return_period_days >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
