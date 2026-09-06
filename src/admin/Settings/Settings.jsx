@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Save, AlertCircle, CheckCircle, Truck, Tag, Percent, RotateCcw, Globe, Info } from 'lucide-react';
 import { storeSettingsService } from '../../services/storeSettingsService';
+import { SUPPORTED_CURRENCIES, isSupportedCurrency } from '../../utils/helpers';
 import { useStoreSettings } from '../../contexts/StoreSettingsContext';
 import { PageLoader } from '../../components/Loading/Loading';
 import styles from './Settings.module.css';
@@ -58,7 +59,7 @@ export default function AdminSettings() {
         if (settings.default_offer_percentage < 0 || settings.default_offer_percentage > 100 || isNaN(settings.default_offer_percentage)) return 'Offer percentage must be between 0 and 100.';
         if (settings.tax_percentage < 0 || settings.tax_percentage > 100 || isNaN(settings.tax_percentage)) return 'Tax percentage must be between 0 and 100.';
         if (settings.return_period_days < 0 || isNaN(settings.return_period_days)) return 'Return period cannot be negative.';
-        if (!settings.currency_code || settings.currency_code.length !== 3) return 'Currency code must be exactly 3 characters.';
+        if (!isSupportedCurrency(settings.currency_code)) return `Currency code must be one of: ${SUPPORTED_CURRENCIES.join(', ')}.`;
         if (!settings.currency_symbol?.trim()) return 'Currency symbol is required.';
         return null;
     };
@@ -201,14 +202,18 @@ export default function AdminSettings() {
                                 <div className={styles.formRow}>
                                     <div className={styles.formCol}>
                                         <label className="form-label">Currency Code</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             className="form-input"
                                             value={settings.currency_code}
-                                            onChange={e => handleChange('currency_code', e.target.value.toUpperCase())}
-                                            maxLength={3}
-                                            placeholder="INR"
-                                        />
+                                            onChange={e => handleChange('currency_code', e.target.value)}
+                                        >
+                                            {SUPPORTED_CURRENCIES.map(code => (
+                                                <option key={code} value={code}>{code}</option>
+                                            ))}
+                                        </select>
+                                        <span className={styles.inputHelp}>
+                                            Only currencies the storefront knows how to format are selectable.
+                                        </span>
                                     </div>
                                     <div className={styles.formCol}>
                                         <label className="form-label">Currency Symbol</label>

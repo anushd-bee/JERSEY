@@ -1,20 +1,29 @@
 import { supabase } from '../lib/supabase';
 
 export const orderService = {
-    async create(orderData) {
-        const { data, error } = await supabase
-            .from('orders')
-            .insert(orderData)
-            .select()
-            .single();
+    // Creates the order server-side: the edge function re-fetches real
+    // product prices from the DB and creates the Razorpay order itself.
+    // `items` should only ever be { product_id, size, quantity } — never price.
+    async createSecureOrder({ items, shipping_address }) {
+        const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+            body: {
+                items: items.map(({ id, size, quantity }) => ({
+                    product_id: id,
+                    size,
+                    quantity,
+                })),
+                shipping_address,
+            },
+        });
         return { data, error };
     },
 
-    async createOrderItems(items) {
-        const { data, error } = await supabase
-            .from('order_items')
-            .insert(items)
-            .select();
+    // Called after Razorpay's checkout handler returns — verifies the
+    // signature server-side before the order is ever marked confirmed.
+    async verifyPayment({ db_order_id, razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
+        const { data, error } = await supabase.functions.invoke('verify-razorpay-payment', {
+            body: { db_order_id, razorpay_order_id, razorpay_payment_id, razorpay_signature },
+        });
         return { data, error };
     },
 

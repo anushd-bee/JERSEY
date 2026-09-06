@@ -46,7 +46,6 @@ export default function Checkout() {
         formState: { errors, isValid },
     } = useForm({
         resolver: zodResolver(checkoutSchema),
-        ctx: { user },
         mode: 'onChange',
         defaultValues: {
             email: user?.email || '',
@@ -77,51 +76,48 @@ export default function Checkout() {
                 return;
             }
 
-            // Stage 1: Insert DB order record with pending state
-            const orderData = {
-                user_id: user.id,
-                status: 'pending',
-                total: grandTotal,
-                subtotal: totalPrice,
-                shipping_amount: shipping,
-                tax_amount: 0,
-                discount_amount: 0,
+            // Stage 1: Ask the server to create the order. Prices, shipping,
+            // tax and the Razorpay order itself are all computed server-side
+            // from the real product data — we never send our own totals.
+            const { data: secureOrder, error } = await orderService.createSecureOrder({
+                items,
                 shipping_address: formData,
-                payment_method: 'razorpay',
-            };
+            });
+            if (error || secureOrder?.error) {
+                throw new Error(secureOrder?.error || error.message || 'Failed to create order');
+            }
 
-            const { data: order, error } = await orderService.create(orderData);
-            if (error) throw error;
+            const { db_order_id, razorpay_order_id, amount, currency, key_id } = secureOrder;
 
-            const orderItems = items.map((item) => ({
-                order_id: order.id,
-                product_id: item.id,
-                quantity: item.quantity,
-                price: item.price,
-                size: item.size,
-            }));
-
-            const { error: itemsError } = await orderService.createOrderItems(orderItems);
-            if (itemsError) throw itemsError;
-
-            // Setup Razorpay checkout options object
+            // Setup Razorpay checkout options object using the SERVER-issued amount/order id
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_dummyKeyConfig',
-                amount: grandTotal * 100, // in paisa
-                currency: 'INR',
+                key: key_id,
+                amount,
+                currency,
+                order_id: razorpay_order_id,
                 name: 'JerseyStore',
-                description: `Order Payment for #${order.id.slice(0, 8).toUpperCase()}`,
+                description: `Order Payment for #${db_order_id.slice(0, 8).toUpperCase()}`,
                 image: '/favicon.ico',
                 handler: async function (response) {
                     try {
-                        // Success payment handler
-                        await orderService.updateStatus(order.id, 'confirmed');
-                        setSuccessOrder(order);
+                        // Success handler: verify the signature server-side before
+                        // treating the payment as real. The order is only marked
+                        // 'confirmed' inside the edge function, after verification.
+                        const { data: verifyResult, error: verifyError } = await orderService.verifyPayment({
+                            db_order_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        });
+                        if (verifyError || verifyResult?.error) {
+                            throw new Error(verifyResult?.error || verifyError.message || 'Verification failed');
+                        }
+                        setSuccessOrder(verifyResult.order || { id: db_order_id });
                         setStep(2);
                         clearCart();
                     } catch (err) {
-                        console.error('Trigger error on updating status:', err);
-                        alert('Order created, but status update failed. Please contact support.');
+                        console.error('Payment verification failed:', err);
+                        alert('We could not verify your payment. If money was deducted, contact support with your order reference.');
                         navigate('/profile');
                     }
                 },
@@ -131,7 +127,7 @@ export default function Checkout() {
                     contact: formData.phone,
                 },
                 notes: {
-                    order_id: order.id,
+                    order_id: db_order_id,
                 },
                 theme: {
                     color: '#0A0A0A',

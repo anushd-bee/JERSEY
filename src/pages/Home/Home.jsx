@@ -13,7 +13,7 @@ import { categoryService } from '../../services/categoryService';
 import { cmsService } from '../../services/cmsService';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import { ProductSkeleton } from '../../components/Loading/Loading';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
+import useScrollReveal from '../../hooks/useScrollReveal';
 import styles from './Home.module.css';
 
 /* ── Category visual config ─────────────────── */
@@ -499,14 +499,14 @@ export default function Home() {
                         {(featuresSection.items || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0)).map((item, index) => {
                             const Icon = HOME_ICON_MAP[item.icon] || BadgeCheck;
                             return (
-                            <div key={`${item.title}-${index}`} className={styles.featureCard}>
-                                <div className={styles.featureNum} aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>
-                                <div className={styles.featureIconWrap}>
-                                    <Icon size={22} strokeWidth={1.8} />
+                                <div key={`${item.title}-${index}`} className={styles.featureCard}>
+                                    <div className={styles.featureNum} aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>
+                                    <div className={styles.featureIconWrap}>
+                                        <Icon size={22} strokeWidth={1.8} />
+                                    </div>
+                                    <h3 className={styles.featureTitle}>{item.title}</h3>
+                                    <p className={styles.featureDesc}>{item.description}</p>
                                 </div>
-                                <h3 className={styles.featureTitle}>{item.title}</h3>
-                                <p className={styles.featureDesc}>{item.description}</p>
-                            </div>
                             );
                         })}
                     </div>

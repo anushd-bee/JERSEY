@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
+    Home,
     Package,
     ShoppingCart,
     Users,
@@ -22,7 +23,7 @@ import styles from './Dashboard.module.css';
 
 const sidebarLinks = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/admin/home', icon: LayoutDashboard, label: 'Home Page' },
+    { to: '/admin/home', icon: Home, label: 'Home Page' },
     { to: '/admin/products', icon: Package, label: 'Products' },
     { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
     { to: '/admin/customers', icon: Users, label: 'Customers' },
@@ -143,19 +144,18 @@ export default function DashboardHome() {
     useEffect(() => {
         async function loadStats() {
             try {
-                const [ordersRes, productsRes, customersRes] = await Promise.all([
-                    supabase.from('orders').select('total, status', { count: 'exact' }),
-                    supabase.from('products').select('id', { count: 'exact' }),
-                    supabase.from('profiles').select('id', { count: 'exact' }),
-                ]);
+                // Single SECURITY DEFINER RPC — bypasses RLS, always returns
+                // accurate totals for orders, revenue, products, and customers.
+                const { data: statsData, error: statsError } = await supabase
+                    .rpc('get_admin_stats');
 
-                const revenue = (ordersRes.data || []).reduce((sum, o) => sum + (o.total || 0), 0);
+                if (statsError) throw statsError;
 
                 setStats({
-                    revenue,
-                    orders: ordersRes.count || 0,
-                    products: productsRes.count || 0,
-                    customers: customersRes.count || 0,
+                    revenue: Number(statsData?.revenue ?? 0),
+                    orders: Number(statsData?.orders ?? 0),
+                    products: Number(statsData?.products ?? 0),
+                    customers: Number(statsData?.customers ?? 0),
                 });
 
                 const { data: recent } = await supabase

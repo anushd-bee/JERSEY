@@ -98,13 +98,18 @@ export const cmsService = {
 
     async uploadHomepageMedia(file, folder = 'hero') {
         try {
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            const maxSize = 10 * 1024 * 1024;
-            if (!allowedTypes.includes(file.type)) {
-                return { data: null, error: { message: 'Please upload a JPG, PNG, or WebP image.' } };
+            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            const allowedVideoTypes = ['video/mp4', 'video/webm'];
+            const isImage = allowedImageTypes.includes(file.type);
+            const isVideo = allowedVideoTypes.includes(file.type);
+
+            if (!isImage && !isVideo) {
+                return { data: null, error: { message: 'Please upload a JPG, PNG, WebP image or MP4/WebM video.' } };
             }
+
+            const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                return { data: null, error: { message: 'Images must be 10 MB or smaller.' } };
+                return { data: null, error: { message: isVideo ? 'Videos must be 100 MB or smaller.' : 'Images must be 10 MB or smaller.' } };
             }
             const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '-');
             const path = `${folder}/${Date.now()}-${safeName}`;

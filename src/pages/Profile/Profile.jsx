@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { LogOut, Package, Settings, ShoppingBag, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { orderService } from '../../services/orderService';
@@ -9,17 +9,12 @@ import styles from './Profile.module.css';
 
 export default function Profile() {
     const { user, profile, isAdmin, loading: authLoading, signOut, updateProfile } = useAuth();
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('orders');
     const [orders, setOrders] = useState([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
+    const [profileMsg, setProfileMsg] = useState({ type: '', text: '' });
     const [formData, setFormData] = useState({});
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            navigate('/login');
-        }
-    }, [user, authLoading, navigate]);
 
     useEffect(() => {
         if (user) {
@@ -50,13 +45,18 @@ export default function Profile() {
 
     async function handleSignOut() {
         await signOut();
-        navigate('/');
+        window.location.href = '/';
     }
 
     async function handleSaveProfile(e) {
         e.preventDefault();
-        await updateProfile(formData);
-        alert('Profile updated!');
+        setProfileMsg({ type: '', text: '' });
+        const { error } = await updateProfile(formData);
+        if (error) {
+            setProfileMsg({ type: 'error', text: error.message || 'Failed to save profile. Please try again.' });
+        } else {
+            setProfileMsg({ type: 'success', text: 'Profile updated successfully!' });
+        }
     }
 
     if (authLoading) return <PageLoader />;
@@ -188,6 +188,11 @@ export default function Profile() {
                                 />
                             </div>
                         </div>
+                        {profileMsg.text && (
+                            <div className={`alert alert--${profileMsg.type === 'error' ? 'danger' : 'success'}`} style={{ marginBottom: 'var(--space-md)' }}>
+                                {profileMsg.text}
+                            </div>
+                        )}
                         <button type="submit" className={styles.saveBtn}>
                             Save Changes
                         </button>

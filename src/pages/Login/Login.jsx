@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +28,11 @@ export default function Login() {
     const [submitting, setSubmitting] = useState(false);
     const { signIn, signUp } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Honor the redirect destination set by <ProtectedRoute>
+    const redirectTo = new URLSearchParams(location.search).get('redirect') || '/';
+    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/';
 
     const loginForm = useForm({
         resolver: zodResolver(loginSchema),
@@ -46,7 +51,7 @@ export default function Login() {
         try {
             const { error: err } = await signIn(data.email, data.password);
             if (err) throw err;
-            navigate('/');
+            navigate(safeRedirect, { replace: true });
         } catch (err) {
             setError(err.message || 'Login failed');
         } finally {
