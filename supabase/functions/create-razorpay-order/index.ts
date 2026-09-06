@@ -122,9 +122,10 @@ Deno.serve(async (req) => {
         const { data: settings, error: settingsError } = await supabaseAdmin
             .from('store_settings')
             .select('*')
-            .single();
+            .limit(1)
+            .maybeSingle();
 
-        if (settingsError) {
+        if (settingsError && settingsError.code !== 'PGRST116') {
             console.error('[RAZORPAY DEBUG] SETTINGS_QUERY error:', settingsError);
             return json({ error: 'Failed to access store settings.' }, 500);
         }
