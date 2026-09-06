@@ -194,14 +194,14 @@ export default function Home() {
         return () => clearTimeout(t);
     }, []);
 
-    const heroEyebrow = activeHeroSlide?.eyebrow || '2026 / 27 COLLECTION';
-    const heroTitle = activeHeroSlide?.title || 'WEAR THE GAME.';
-    const heroSubtitle = activeHeroSlide?.subtitle || 'Premium authentic jerseys from the world\'s biggest clubs and national teams.';
-    const heroDescription = activeHeroSlide?.description || 'Discover premium jerseys built for matchday energy and everyday style.';
-    const heroPrimaryText = activeHeroSlide?.primary_button_text || 'SHOP COLLECTION';
-    const heroPrimaryUrl = activeHeroSlide?.primary_button_url || '/shop';
-    const heroSecondaryText = activeHeroSlide?.secondary_button_text || 'Explore Football';
-    const heroSecondaryUrl = activeHeroSlide?.secondary_button_url || '/shop?category=football';
+    const heroEyebrow = activeHeroSlide?.eyebrow ?? '2026 / 27 COLLECTION';
+    const heroTitle = activeHeroSlide?.title ?? 'WEAR THE GAME.';
+    const heroSubtitle = activeHeroSlide?.subtitle ?? 'Premium authentic jerseys from the world\'s biggest clubs and national teams.';
+    const heroDescription = activeHeroSlide?.description ?? 'Discover premium jerseys built for matchday energy and everyday style.';
+    const heroPrimaryText = activeHeroSlide?.primary_button_text ?? 'SHOP COLLECTION';
+    const heroPrimaryUrl = activeHeroSlide?.primary_button_url ?? '/shop';
+    const heroSecondaryText = activeHeroSlide?.secondary_button_text ?? 'Explore Football';
+    const heroSecondaryUrl = activeHeroSlide?.secondary_button_url ?? '/shop?category=football';
     const heroDesktopImage = activeHeroSlide?.desktop_image || '/hero-2026-27.png';
     const heroMobileImage = activeHeroSlide?.mobile_image || heroDesktopImage;
     const heroMediaType = activeHeroSlide?.media_type || 'image';
@@ -247,63 +247,80 @@ export default function Home() {
                             />
                         </picture>
                     ) : null}
-                    <div className={styles.heroOverlay} />
+                    {/* Dark gradient overlay removed to allow pure graphic display without dimming */}
+                    {heroTitle && <div className={styles.heroOverlay} />}
                 </div>
                 {/* Noise texture */}
                 <div className={styles.heroNoise} aria-hidden="true" />
 
                 <div className={styles.heroLayout}>
                     {/* ── Left: text content ── */}
-                    <div className={`${styles.heroText} ${heroReady ? styles.heroReady : ''}`}>
-                        {/* Eyebrow */}
-                        <div className={styles.heroEyebrow}>
-                            <span className={styles.heroEyebrowDot} aria-hidden="true" />
-                            <span>{heroEyebrow}</span>
-                        </div>
-
-                        {/* Editorial headline — two lines */}
-                        <h1 className={styles.heroTitle} aria-label={heroTitle}>
-                            {heroTitle.includes(' ') ? (
-                                <>
-                                    <span className={styles.heroLine1}>{heroTitle.split(' ').slice(0, -1).join(' ')}</span>
-                                    <span className={styles.heroLine2}>
-                                        {heroTitle.split(' ').slice(-1)[0]}<span className={styles.heroAccent}>.</span>
-                                    </span>
-                                </>
-                            ) : (
-                                <span className={styles.heroLine1}>{heroTitle}</span>
+                    {heroTitle ? (
+                        <div className={`${styles.heroText} ${heroReady ? styles.heroReady : ''}`}>
+                            {/* Eyebrow */}
+                            {heroEyebrow && (
+                                <div className={styles.heroEyebrow}>
+                                    <span className={styles.heroEyebrowDot} aria-hidden="true" />
+                                    <span>{heroEyebrow}</span>
+                                </div>
                             )}
-                        </h1>
 
-                        {/* Sub-copy */}
-                        <p className={styles.heroSub}>
-                            {heroSubtitle || heroDescription}
-                        </p>
+                            {/* Editorial headline — two lines */}
+                            <h1 className={styles.heroTitle} aria-label={heroTitle}>
+                                {heroTitle.includes(' ') ? (
+                                    <>
+                                        <span className={styles.heroLine1}>{heroTitle.split(' ').slice(0, -1).join(' ')}</span>
+                                        <span className={styles.heroLine2}>
+                                            {heroTitle.split(' ').slice(-1)[0]}<span className={styles.heroAccent}>.</span>
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className={styles.heroLine1}>{heroTitle}</span>
+                                )}
+                            </h1>
 
-                        {/* CTAs */}
-                        <div className={styles.heroCtas}>
-                            <Link to={heroPrimaryUrl} className={styles.heroPrimary}>
-                                {heroPrimaryText}
-                                <ArrowRight size={16} strokeWidth={2.5} />
-                            </Link>
-                            <Link to={heroSecondaryUrl} className={styles.heroSecondary}>
-                                {heroSecondaryText}
-                            </Link>
+                            {/* Sub-copy */}
+                            {(heroSubtitle || heroDescription) && (
+                                <p className={styles.heroSub}>
+                                    {heroSubtitle || heroDescription}
+                                </p>
+                            )}
+
+                            {/* CTAs */}
+                            {(heroPrimaryText || heroSecondaryText) && (
+                                <div className={styles.heroCtas}>
+                                    {heroPrimaryText && (
+                                        <Link to={heroPrimaryUrl} className={styles.heroPrimary}>
+                                            {heroPrimaryText}
+                                            <ArrowRight size={16} strokeWidth={2.5} />
+                                        </Link>
+                                    )}
+                                    {heroSecondaryText && (
+                                        <Link to={heroSecondaryUrl} className={styles.heroSecondary}>
+                                            {heroSecondaryText}
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Stats strip */}
+                            <div className={styles.heroStats}>
+                                {heroStats.map((stat, index) => (
+                                    <Fragment key={`${stat.number}-${stat.label}`}>
+                                        {index > 0 && <div key={`divider-${index}`} className={styles.heroStatDivider} aria-hidden="true" />}
+                                        <div className={styles.heroStat}>
+                                            <span className={styles.heroStatNum}>{stat.number}</span>
+                                            <span className={styles.heroStatLabel}>{stat.label}</span>
+                                        </div>
+                                    </Fragment>
+                                ))}
+                            </div>
                         </div>
-
-                        {/* Stats strip */}
-                        <div className={styles.heroStats}>
-                            {heroStats.map((stat, index) => (
-                                <Fragment key={`${stat.number}-${stat.label}`}>
-                                    {index > 0 && <div key={`divider-${index}`} className={styles.heroStatDivider} aria-hidden="true" />}
-                                    <div className={styles.heroStat}>
-                                        <span className={styles.heroStatNum}>{stat.number}</span>
-                                        <span className={styles.heroStatLabel}>{stat.label}</span>
-                                    </div>
-                                </Fragment>
-                            ))}
-                        </div>
-                    </div>
+                    ) : (
+                        /* If no text is provided, make the entire hero a clickable banner graphic */
+                        <Link to={heroPrimaryUrl || '/shop'} className={styles.heroGraphicClickZone} aria-label="Explore Collection" style={{ display: 'block', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+                        </Link>
+                    )}
 
                 </div>
 
