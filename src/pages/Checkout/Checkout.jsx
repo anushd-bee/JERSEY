@@ -23,6 +23,9 @@ const checkoutSchema = z.object({
 
 function loadRazorpayScript() {
     return new Promise((resolve) => {
+        if (window.Razorpay) {
+            return resolve(true);
+        }
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.onload = () => resolve(true);
@@ -89,6 +92,11 @@ export default function Checkout() {
 
             const { db_order_id, razorpay_order_id, amount, currency, key_id } = secureOrder;
 
+            // Strict validation before opening Razorpay UI
+            if (!razorpay_order_id || !amount || !key_id) {
+                throw new Error('Server returned incomplete payment information: missing order ID or key.');
+            }
+
             // Setup Razorpay checkout options object using the SERVER-issued amount/order id
             const options = {
                 key: key_id,
@@ -150,8 +158,17 @@ export default function Checkout() {
 
             rzp.open();
         } catch (err) {
-            console.error('Checkout creation error details:', err);
-            alert('Checkout initialization failed. Please try again.');
+            console.error('[Payment Initialization Failed]:', err);
+            const msg = err?.message || 'Unknown error';
+
+            // Safe user-friendly error with developer context if safe
+            const isConnectionError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('edge');
+
+            if (isConnectionError) {
+                alert('Unable to start payment. Please check your connection and try again.');
+            } else {
+                alert('Unable to start payment. Please try again. System returned: ' + msg.substring(0, 80));
+            }
             setSubmitting(false);
         }
     }
