@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     }
 
     try {
+        console.log('[RAZORPAY DEBUG] AUTH_START');
         const authHeader = req.headers.get('Authorization');
         if (!authHeader) {
             return json({ error: 'Missing Authorization header' }, 401);
@@ -56,6 +57,8 @@ Deno.serve(async (req) => {
             return json({ error: 'Not authenticated' }, 401);
         }
 
+        console.log(`[RAZORPAY DEBUG] AUTH_SUCCESS for user_id: ${user.id}`);
+
         const body: RequestBody = await req.json();
         if (!body.items || body.items.length === 0) {
             return json({ error: 'Cart is empty' }, 400);
@@ -71,6 +74,7 @@ Deno.serve(async (req) => {
         );
 
         // --- Re-fetch REAL product prices/stock from the DB. Ignore any price the client sent. ---
+        console.log('[RAZORPAY DEBUG] PRODUCT_QUERY');
         const productIds = [...new Set(body.items.map((i) => i.product_id))];
         const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
@@ -114,6 +118,7 @@ Deno.serve(async (req) => {
         }
 
         // --- Fetch store settings for shipping/tax/discount rules ---
+        console.log('[RAZORPAY DEBUG] SETTINGS_QUERY');
         const { data: settings } = await supabaseAdmin
             .from('store_settings')
             .select('*')
@@ -165,15 +170,23 @@ Deno.serve(async (req) => {
             .select()
             .single();
 
-        if (orderError) throw orderError;
+        if (orderError) {
+            console.error('[RAZORPAY DEBUG] LOCAL_ORDER_CREATED error:', orderError);
+            throw orderError;
+        }
+        console.log(`[RAZORPAY DEBUG] LOCAL_ORDER_CREATED successfully (ID: ${order.id})`);
 
         const { error: itemsError } = await supabaseAdmin.from('order_items').insert(
             orderItemsToInsert.map((i) => ({ ...i, order_id: order.id }))
         );
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+            console.error('[RAZORPAY DEBUG] order_items insertion error:', itemsError);
+            throw itemsError;
+        }
 
         // --- Create the Razorpay order server-side using the SECRET key ---
+        console.log('[RAZORPAY DEBUG] RAZORPAY_CREDENTIAL_CHECK');
         const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
         const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
@@ -183,6 +196,7 @@ Deno.serve(async (req) => {
             return json({ error: 'Razorpay credentials not configured on server' }, 500);
         }
 
+        console.log('[RAZORPAY DEBUG] RAZORPAY_API_REQUEST');
         const basicAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
         const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
@@ -201,11 +215,14 @@ Deno.serve(async (req) => {
 
         const rzpOrder = await rzpRes.json();
         if (!rzpRes.ok) {
+            console.error('[RAZORPAY DEBUG] RAZORPAY_API_RESPONSE error:', rzpOrder);
             // Roll back the DB order so it doesn't sit around as a phantom order
             await supabaseAdmin.from('orders').delete().eq('id', order.id);
             return json({ error: 'Failed to create Razorpay order', details: rzpOrder }, 502);
         }
+        console.log(`[RAZORPAY DEBUG] RAZORPAY_API_RESPONSE success: ${rzpOrder.id}`);
 
+        console.log('[RAZORPAY DEBUG] ORDER_UPDATED');
         await supabaseAdmin
             .from('orders')
             .update({ razorpay_order_id: rzpOrder.id })
@@ -219,8 +236,8 @@ Deno.serve(async (req) => {
             key_id: razorpayKeyId,
         });
     } catch (err) {
-        console.error(err);
-        return json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
+        console.error('[RAZORPAY DEBUG] Fatal Error:', err);
+        return json({ error: err instanceof Error ? err.message : 'Unknown error', details: err }, 500);
     }
 });
 

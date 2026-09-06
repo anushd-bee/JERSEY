@@ -86,14 +86,24 @@ export default function Checkout() {
                 items,
                 shipping_address: formData,
             });
+
+            // Detailed Diagnostic Logging for Developer console
             if (error || secureOrder?.error) {
-                throw new Error(secureOrder?.error || error.message || 'Failed to create order');
+                console.error('[RAZORPAY DEBUG]');
+                console.error(`Function: create-razorpay-order`);
+                console.error(`Status:`, error?.status || 'Unknown');
+                console.error(`Response Data:`, secureOrder);
+                console.error(`Error Details:`, error || secureOrder?.error);
+
+                const errMsg = secureOrder?.error || error?.message || 'Failed to create order';
+                throw new Error(errMsg);
             }
 
             const { db_order_id, razorpay_order_id, amount, currency, key_id } = secureOrder;
 
             // Strict validation before opening Razorpay UI
             if (!razorpay_order_id || !amount || !key_id) {
+                console.error('[RAZORPAY DEBUG] Missing required fields in secureOrder:', secureOrder);
                 throw new Error('Server returned incomplete payment information: missing order ID or key.');
             }
 
@@ -158,16 +168,16 @@ export default function Checkout() {
 
             rzp.open();
         } catch (err) {
-            console.error('[Payment Initialization Failed]:', err);
             const msg = err?.message || 'Unknown error';
+            console.error('[RAZORPAY DEBUG] Checkout Fatal:', msg, err);
 
-            // Safe user-friendly error with developer context if safe
-            const isConnectionError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('edge');
-
-            if (isConnectionError) {
+            // Temporarily removed the strict masking to help the user debug on their screen!
+            // E.g. if the backend sends "Razorpay credentials not configured", show it.
+            // But obscure raw JS errors if they look like ugly fetch traces.
+            if (msg.includes('fetch') || msg.includes('Failed to fetch')) {
                 alert('Unable to start payment. Please check your connection and try again.');
             } else {
-                alert('Unable to start payment. Please try again. System returned: ' + msg.substring(0, 80));
+                alert('Unable to start payment: ' + (msg.length > 50 ? msg.substring(0, 100) + '...' : msg));
             }
             setSubmitting(false);
         }
