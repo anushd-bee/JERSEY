@@ -4,7 +4,7 @@ import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
 import { cmsService } from '../../services/cmsService';
 import { PageLoader } from '../../components/Loading/Loading';
-import HeroPreview, { SettingsPreview } from './HeroPreview';
+import HeroPreview, { SettingsPreview, PromoPreview } from './HeroPreview';
 import styles from './HomeCMS.module.css';
 
 const DEFAULTS = {
@@ -50,7 +50,7 @@ export default function HomeCMS() {
             {tab === 'Promo Banner' && <PromoTab section={settings.promo_section} update={section => changeSettings(prev => ({ ...prev, promo_section: section }))} />}
             {tab === 'Features/Promise' && <FeaturesTab section={settings.features_section} update={section => changeSettings(prev => ({ ...prev, features_section: section }))} />}
             {tab === 'Settings' && <SettingsTab settings={settings} published={published} setPublished={value => { setPublished(value); setDirty(true); }} update={changeSettings} />}
-        </div><aside className={styles.preview}><div className={styles.previewHeader}><div><span className={styles.kicker}>Live preview</span><b>{tab}</b></div><div className={styles.previewToggle}><button className={previewMode === 'desktop' ? styles.selected : ''} onClick={() => setPreviewMode('desktop')}>Desktop</button><button className={previewMode === 'mobile' ? styles.selected : ''} onClick={() => setPreviewMode('mobile')}>Mobile</button></div></div>{tab === 'Features/Promise' ? <SettingsPreview features={settings.features_section.items} /> : <HeroPreview slide={activeSlide} stats={settings.hero_stats} mode={previewMode} />}</aside></div>
+        </div><aside className={styles.preview}><div className={styles.previewHeader}><div><span className={styles.kicker}>Live preview</span><b>{tab === 'Promo Banner' ? 'Promo Poster' : tab}</b></div><div className={styles.previewToggle}><button className={previewMode === 'desktop' ? styles.selected : ''} onClick={() => setPreviewMode('desktop')}>Desktop</button><button className={previewMode === 'mobile' ? styles.selected : ''} onClick={() => setPreviewMode('mobile')}>Mobile</button></div></div>{tab === 'Features/Promise' ? <SettingsPreview features={settings.features_section.items} /> : tab === 'Promo Banner' ? <PromoPreview section={settings.promo_section} mode={previewMode} /> : <HeroPreview slide={activeSlide} stats={settings.hero_stats} mode={previewMode} />}</aside></div>
     </div>;
 }
 

@@ -456,33 +456,31 @@ export default function Home() {
             {/* ══════════════════════════════════════
                 PROMO BANNER — Cinematic campaign
             ══════════════════════════════════════ */}
-            {promoSection.enabled !== false && (
-                <section className={styles.banner} aria-label="Promotional banner">
-                    <div className={styles.bannerBg} aria-hidden="true" />
-                    <div className={styles.bannerNoise} aria-hidden="true" />
-                    <div className={styles.bannerInner}>
-                        {/* Pure graphical poster mode as requested */}
-
-                        {/* Image poster spreading across the section */}
-                        <div className="reveal" style={{ width: '100%', height: '100%', display: 'flex' }} aria-hidden="true">
-                            {promoSection.image ? (
-                                <Link to={promoSection.button_url || '/shop'} style={{ width: '100%', display: 'block' }}>
-                                    <img
-                                        src={promoSection.image}
-                                        style={{ width: '100%', height: 'auto', maxHeight: '700px', objectFit: 'cover', borderRadius: 'var(--radius-lg)' }}
-                                        alt="Promo Banner"
-                                        loading="lazy"
-                                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
-                                    />
-                                </Link>
-                            ) : (
-                                <div className={styles.bannerImgPlaceholder} style={{ width: '100%', minHeight: '300px' }}>
-                                    <span className={styles.bannerImgBig}>⚽</span>
-                                    <div className={styles.bannerImgGlare} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
+            {promoSection.enabled !== false && promoSection.image && (
+                <section aria-label="Promotional banner" style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '60px 5vw'
+                }}>
+                    <Link to="/shop" style={{ width: '100%', maxWidth: '1400px', display: 'block', margin: '0 auto' }}>
+                        <img
+                            src={promoSection.image}
+                            alt="Promo Poster"
+                            className="reveal"
+                            style={{
+                                width: '100%',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                display: 'block',
+                                borderRadius: 'calc(var(--radius-lg, 12px) * 0.8)',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+                            }}
+                            loading="lazy"
+                            onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                        />
+                    </Link>
                 </section>
             )}
 

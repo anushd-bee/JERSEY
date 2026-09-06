@@ -27,3 +27,15 @@ export default function HeroPreview({ slide, stats = [], mode = 'desktop' }) {
 export function SettingsPreview({ features = [] }) {
     return <div className={styles.miniFeatures}>{features.map((item, index) => { const Icon = ICONS[item.icon] || BadgeCheck; return <div key={`${item.title}-${index}`}><Icon size={19} /><b>{item.title || 'Promise'}</b><p>{item.description}</p></div>; })}</div>;
 }
+
+export function PromoPreview({ section, mode = 'desktop' }) {
+    return (
+        <div className={`${styles.previewFrame} ${mode === 'mobile' ? styles.previewMobile : ''}`} style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', background: '#111' }}>
+            {section?.image ? (
+                <img src={section.image} alt="Promo preview" style={{ width: '100%', height: 'auto', maxHeight: '100%', objectFit: 'contain' }} />
+            ) : (
+                <div style={{ width: '100%', textAlign: 'center', padding: '20px', color: '#666', fontSize: '12px' }}>No Promo Image Uploaded</div>
+            )}
+        </div>
+    );
+}
