@@ -5,20 +5,36 @@ export const storeSettingsService = {
         const { data, error } = await supabase
             .from('store_settings')
             .select('*')
-            .single(); // Guaranteed by singleton constraint
+            .limit(1)
+            .maybeSingle();
 
         return { data, error };
     },
 
     async updateSettings(updates) {
-        // Safe update for single-row config using the singleton lock
-        const { data, error } = await supabase
+        // Fetch existing first to check if we need to UPDATE or INSERT
+        const { data: existing } = await supabase
             .from('store_settings')
-            .update(updates)
-            .eq('singleton_id', 1)
-            .select()
-            .single();
+            .select('id')
+            .limit(1)
+            .maybeSingle();
 
-        return { data, error };
+        if (existing?.id) {
+            const { data, error } = await supabase
+                .from('store_settings')
+                .update(updates)
+                .eq('id', existing.id)
+                .select()
+                .single();
+            return { data, error };
+        } else {
+            // First time setup - insert the row securely
+            const { data, error } = await supabase
+                .from('store_settings')
+                .insert([{ ...updates, singleton_id: 1 }])
+                .select()
+                .single();
+            return { data, error };
+        }
     }
 };
