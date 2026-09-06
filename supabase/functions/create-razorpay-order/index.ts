@@ -148,8 +148,8 @@ Deno.serve(async (req) => {
 
         const total = +(discountedSubtotal + shippingAmount + taxAmount).toFixed(2);
 
-        if (total <= 0) {
-            return json({ error: 'Invalid order total' }, 400);
+        if (total < 1.00) {
+            return json({ error: 'Order total must be at least ₹1.00 to process payment' }, 400);
         }
 
         // --- Create the order row (pending, unpaid) ---
