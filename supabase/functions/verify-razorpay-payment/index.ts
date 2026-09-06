@@ -119,6 +119,24 @@ Deno.serve(async (req) => {
 
         if (updateError) throw updateError;
 
+        // --- Safe Stock Reduction (Idempotent because we checked payment_status === 'paid' earlier) ---
+        const { data: orderItems } = await supabaseAdmin
+            .from('order_items')
+            .select('product_id, quantity, products(stock)')
+            .eq('order_id', db_order_id);
+
+        if (orderItems && orderItems.length > 0) {
+            for (const item of orderItems) {
+                // Defensive calculation without atomic RPC
+                const currentStock = item.products?.stock || 0;
+                const newStock = Math.max(0, currentStock - item.quantity);
+                await supabaseAdmin
+                    .from('products')
+                    .update({ stock: newStock })
+                    .eq('id', item.product_id);
+            }
+        }
+
         return json({ success: true, order: updatedOrder });
     } catch (err) {
         console.error(err);
