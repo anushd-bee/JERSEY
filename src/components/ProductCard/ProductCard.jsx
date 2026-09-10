@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Image as ImageIcon, Plus, Minus, X, Check } from 'lucide-react';
+import { Heart, ShoppingBag, Image as ImageIcon, Plus, Minus, X, Check, Eye } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,8 +9,82 @@ import styles from './ProductCard.module.css';
 
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
+/* ── Fly-to-Cart Animation ─────────────────────────────────────── */
+function flyToCart(sourceEl) {
+    const cartIcon = document.querySelector('[data-cart-icon]');
+    if (!sourceEl || !cartIcon) return;
+
+    const sourceRect = sourceEl.getBoundingClientRect();
+    const targetRect = cartIcon.getBoundingClientRect();
+
+    // Clone the source image
+    const clone = document.createElement('div');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.style.cssText = `
+        position: fixed;
+        z-index: 9999;
+        pointer-events: none;
+        width: ${sourceRect.width}px;
+        height: ${sourceRect.height}px;
+        left: ${sourceRect.left}px;
+        top: ${sourceRect.top}px;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        transition: all 600ms cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 1;
+    `;
+
+    // Copy the image content
+    const img = sourceEl.querySelector('img');
+    if (img) {
+        const clonedImg = img.cloneNode(true);
+        clonedImg.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:8%;background:#fff;';
+        clone.appendChild(clonedImg);
+    } else {
+        clone.style.background = 'var(--color-background)';
+    }
+
+    // Respect prefers-reduced-motion
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+        // Skip animation, just dispatch the bump event
+        window.dispatchEvent(new Event('cart-icon-bump'));
+        return;
+    }
+
+    document.body.appendChild(clone);
+
+    // Force reflow then animate
+    clone.getBoundingClientRect();
+
+    const targetCenterX = targetRect.left + targetRect.width / 2;
+    const targetCenterY = targetRect.top + targetRect.height / 2;
+
+    clone.style.left = `${targetCenterX - 16}px`;
+    clone.style.top = `${targetCenterY - 16}px`;
+    clone.style.width = '32px';
+    clone.style.height = '32px';
+    clone.style.opacity = '0.3';
+    clone.style.borderRadius = '50%';
+
+    clone.addEventListener('transitionend', () => {
+        clone.remove();
+        // Bump the cart icon after the clone arrives
+        window.dispatchEvent(new Event('cart-icon-bump'));
+    }, { once: true });
+
+    // Fallback cleanup
+    setTimeout(() => {
+        if (clone.parentNode) {
+            clone.remove();
+            window.dispatchEvent(new Event('cart-icon-bump'));
+        }
+    }, 800);
+}
+
 /* ── Quick-Add Drawer ──────────────────────────────────────────── */
-function QuickAddDrawer({ product, onClose }) {
+function QuickAddDrawer({ product, onClose, imageRef }) {
     const { addItem } = useCart();
     const [selectedSize, setSelectedSize] = useState(null);
     const [qty, setQty] = useState(1);
@@ -18,7 +92,14 @@ function QuickAddDrawer({ product, onClose }) {
 
     function handleAdd() {
         if (!selectedSize) return;
-        addItem(product, selectedSize, qty);
+        // Trigger fly animation from the card image
+        if (imageRef?.current) {
+            flyToCart(imageRef.current);
+        }
+        // Delay cart add so badge increments when clone arrives
+        setTimeout(() => {
+            addItem(product, selectedSize, qty);
+        }, 500);
         setAdded(true);
         setTimeout(() => {
             setAdded(false);
@@ -144,6 +225,7 @@ export default function ProductCard({ product }) {
     const { user } = useAuth();
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [failedImages, setFailedImages] = useState({});
+    const imageRef = useRef(null);
 
     const wishlisted = user && isWishlisted(product.id);
 
@@ -155,6 +237,7 @@ export default function ProductCard({ product }) {
     const usableImages = images.filter(image => !failedImages[image]);
     const primaryImage = usableImages[0];
     const secondaryImage = usableImages[1]; // hover image if available
+    const hasMultipleImages = !!secondaryImage;
 
     useEffect(() => {
         setFailedImages({});
@@ -202,17 +285,17 @@ export default function ProductCard({ product }) {
                 />
 
                 {/* ── Image area ── */}
-                <div className={styles.imageWrap}>
+                <div className={styles.imageWrap} ref={imageRef}>
                     {primaryImage ? (
                         <>
                             <img
                                 src={primaryImage}
                                 alt={product.name}
-                                className={`${styles.img} ${secondaryImage ? styles.imgPrimary : ''}`}
+                                className={`${styles.img} ${hasMultipleImages ? styles.imgPrimary : styles.imgSingle}`}
                                 loading="lazy"
                                 onError={() => handleImageError(primaryImage)}
                             />
-                            {secondaryImage && (
+                            {hasMultipleImages ? (
                                 <img
                                     src={secondaryImage}
                                     alt=""
@@ -221,6 +304,14 @@ export default function ProductCard({ product }) {
                                     aria-hidden="true"
                                     onError={() => handleImageError(secondaryImage)}
                                 />
+                            ) : (
+                                /* Single image: show "Quick View" label on hover */
+                                <div className={styles.quickViewOverlay} aria-hidden="true">
+                                    <span className={styles.quickViewLabel}>
+                                        <Eye size={14} strokeWidth={2} />
+                                        Quick View
+                                    </span>
+                                </div>
                             )}
                         </>
                     ) : (
@@ -296,6 +387,7 @@ export default function ProductCard({ product }) {
                 <QuickAddDrawer
                     product={product}
                     onClose={() => setDrawerOpen(false)}
+                    imageRef={imageRef}
                 />
             )}
         </>

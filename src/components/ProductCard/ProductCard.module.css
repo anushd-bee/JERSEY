@@ -56,34 +56,76 @@
 /* When both images exist */
 .imgPrimary {
     transition:
-        opacity 450ms cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
         transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .imgSecondary {
     opacity: 0;
     transition:
-        opacity 450ms cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
         transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.card:hover .imgPrimary {
+.card:hover .imgPrimary,
+.card:focus-within .imgPrimary {
     opacity: 0;
     transform: scale(1.04);
 }
 
-.card:hover .imgSecondary {
+.card:hover .imgSecondary,
+.card:focus-within .imgSecondary {
     opacity: 1;
     transform: scale(1.04);
 }
 
-/* When no hover-image — just zoom on primary */
-.imageWrap:not(:has(.imgSecondary)) .img {
-    transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+/* When only one image — subtle zoom + Quick View overlay */
+.imgSingle {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.card:hover .imageWrap:not(:has(.imgSecondary)) .img {
-    transform: scale(1.04);
+.card:hover .imgSingle,
+.card:focus-within .imgSingle {
+    transform: scale(1.06);
+}
+
+/* Quick View overlay (single-image cards only) */
+.quickViewOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 16px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.quickViewLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(10, 10, 10, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    font-size: 11px;
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: var(--radius-full);
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+        opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover .quickViewLabel,
+.card:focus-within .quickViewLabel {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* Placeholder */
@@ -154,14 +196,15 @@
     transform: translateX(0);
 }
 
-/* Desktop: hide until hover */
+/* Desktop: hide until hover/focus */
 @media (hover: hover) {
     .actions {
         opacity: 0;
         transform: translateX(8px);
     }
 
-    .card:hover .actions {
+    .card:hover .actions,
+    .card:focus-within .actions {
         opacity: 1;
         transform: translateX(0);
     }
@@ -230,7 +273,8 @@
     transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.card:hover .quickAddBar {
+.card:hover .quickAddBar,
+.card:focus-within .quickAddBar {
     transform: translateY(0);
 }
 
@@ -695,7 +739,9 @@
     .card:hover,
     .imgPrimary,
     .imgSecondary,
+    .imgSingle,
     .quickAddBar,
+    .quickViewLabel,
     .actions,
     .actionBtn,
     .drawerBackdrop,
@@ -713,6 +759,16 @@
     }
 
     .card:hover .imgSecondary {
+        transform: none;
+    }
+
+    .card:hover .imgSingle {
+        transform: none;
+    }
+
+    .card:hover .quickViewLabel,
+    .card:focus-within .quickViewLabel {
+        opacity: 1;
         transform: none;
     }
 }

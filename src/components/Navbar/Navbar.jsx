@@ -31,12 +31,24 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [cartBump, setCartBump] = useState(false);
 
     const { user, isAdmin, signOut } = useAuth();
     const { totalItems } = useCart();
     const navigate = useNavigate();
     const searchInputRef = useRef(null);
     const closeMobile = useCallback(() => setMenuOpen(false), []);
+
+    /* Listen for fly-to-cart arrival to trigger bump animation */
+    useEffect(() => {
+        function handleBump() {
+            setCartBump(true);
+            const t = setTimeout(() => setCartBump(false), 400);
+            return () => clearTimeout(t);
+        }
+        window.addEventListener('cart-icon-bump', handleBump);
+        return () => window.removeEventListener('cart-icon-bump', handleBump);
+    }, []);
 
     /* ── Scroll detection ──────────────────────── */
     useEffect(() => {
@@ -160,7 +172,12 @@ export default function Navbar() {
                         )}
 
                         {/* Cart */}
-                        <Link to="/cart" className={styles.navAction} aria-label={`Shopping cart — ${totalItems} items`}>
+                        <Link
+                            to="/cart"
+                            className={`${styles.navAction} ${cartBump ? styles.cartBumpAnim : ''}`}
+                            aria-label={`Shopping cart — ${totalItems} items`}
+                            data-cart-icon
+                        >
                             <ShoppingCart size={19} strokeWidth={1.8} />
                             {totalItems > 0 && (
                                 <span className={styles.cartBadge} aria-label={`${totalItems} items`}>
