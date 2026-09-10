@@ -6,6 +6,25 @@
     max-width: var(--container-width);
     margin: 0 auto;
     padding: var(--space-xl) var(--space-md) var(--space-4xl);
+    padding-bottom: calc(var(--space-4xl) + 80px);
+    /* leave room for sticky panel on mobile */
+}
+
+/* Smooth page-entry animation — replaces the broken IntersectionObserver reveal */
+.pageLoaded {
+    animation: pdpEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pdpEnter {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .loadingPage {
@@ -47,7 +66,11 @@
     border-radius: var(--radius-sm);
 }
 
-.loadingBreadcrumb { width: 220px; height: 12px; margin-bottom: var(--space-xl); }
+.loadingBreadcrumb {
+    width: 220px;
+    height: 12px;
+    margin-bottom: var(--space-xl);
+}
 
 .loadingLayout {
     display: grid;
@@ -75,17 +98,38 @@
     gap: var(--space-md);
 }
 
-.loadingLineShort { width: 100px; height: 14px; }
-.loadingLineTitle { width: 75%; height: 42px; }
-.loadingLine { width: 100%; max-width: 460px; height: 14px; }
-.loadingLineButton { width: 220px; height: 52px; margin-top: var(--space-md); }
+.loadingLineShort {
+    width: 100px;
+    height: 14px;
+}
+
+.loadingLineTitle {
+    width: 75%;
+    height: 42px;
+}
+
+.loadingLine {
+    width: 100%;
+    max-width: 460px;
+    height: 14px;
+}
+
+.loadingLineButton {
+    width: 220px;
+    height: 52px;
+    margin-top: var(--space-md);
+}
 
 @keyframes detailShimmer {
-    to { background-position: -200% 0; }
+    to {
+        background-position: -200% 0;
+    }
 }
 
 @keyframes detailSpin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ── Breadcrumb ───────────────────────────────────── */
@@ -202,7 +246,9 @@
     font-weight: var(--weight-semibold);
 }
 
-.stockOut { color: var(--danger); }
+.stockOut {
+    color: var(--danger);
+}
 
 .descBlock {
     line-height: var(--leading-relaxed);
@@ -472,6 +518,7 @@
     border-top: 1px solid var(--color-border);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
     padding: var(--space-md) var(--space-lg);
+    padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
     transform: translateY(100%);
     transition: transform var(--motion-normal) var(--ease-expo);
 }
@@ -590,6 +637,8 @@
 @media (min-width: 768px) {
     .page {
         padding: var(--space-2xl) var(--space-xl) var(--space-4xl);
+        padding-bottom: var(--space-4xl);
+        /* no sticky bar on desktop */
     }
 
     .layout {
@@ -699,7 +748,10 @@
     font-size: var(--text-sm);
 }
 
-.productDetailsBlock p span { color: var(--color-text); text-align: right; }
+.productDetailsBlock p span {
+    color: var(--color-text);
+    text-align: right;
+}
 
 .infoSections {
     display: grid;

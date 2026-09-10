@@ -8,11 +8,14 @@
     gap: var(--space-md);
 }
 
-/* Main image area — 1:1 white square */
+/* Main image area — responsive aspect ratio */
 .mainWrapper {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 5;
+    /* portrait-friendly on mobile */
+    max-height: 60vh;
+    /* prevent oversized image area on mobile */
     border-radius: var(--radius-xl);
     overflow: hidden;
     background: #ffffff;
@@ -20,6 +23,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .mainWrapper {
+        aspect-ratio: 1 / 1;
+        max-height: none;
+    }
 }
 
 .galleryControl,
@@ -46,11 +56,27 @@
     transform: scale(1.06);
 }
 
-.galleryControlPrev { left: var(--space-md); top: 50%; transform: translateY(-50%); }
-.galleryControlNext { right: var(--space-md); top: 50%; transform: translateY(-50%); }
+.galleryControlPrev {
+    left: var(--space-md);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.galleryControlNext {
+    right: var(--space-md);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .galleryControlPrev:hover,
-.galleryControlNext:hover { transform: translateY(-50%) scale(1.06); }
-.zoomButton { right: var(--space-md); bottom: var(--space-md); }
+.galleryControlNext:hover {
+    transform: translateY(-50%) scale(1.06);
+}
+
+.zoomButton {
+    right: var(--space-md);
+    bottom: var(--space-md);
+}
 
 .mainImage {
     width: 100%;
@@ -186,7 +212,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .galleryControl,
     .zoomButton,
-    .mainImage { transition: none; }
+    .mainImage {
+        transition: none;
+    }
 }

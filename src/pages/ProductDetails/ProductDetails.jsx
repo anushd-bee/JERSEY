@@ -20,7 +20,6 @@ import { formatPrice } from '../../utils/helpers';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import ProductGallery from '../../components/ProductGallery/ProductGallery';
 import { ProductSkeleton } from '../../components/Loading/Loading';
-import useScrollReveal from '../../hooks/useScrollReveal';
 import styles from './ProductDetails.module.css';
 
 export default function ProductDetails() {
@@ -44,8 +43,6 @@ export default function ProductDetails() {
     const wishlisted = user && product && isWishlisted(product.id);
     const containerRef = useRef(null);
     const ctaTriggerRef = useRef(null);
-
-    useScrollReveal(containerRef);
 
     useEffect(() => {
         let active = true;
@@ -204,9 +201,9 @@ export default function ProductDetails() {
     }
 
     return (
-        <div className={styles.page} ref={containerRef}>
+        <div className={`${styles.page} ${styles.pageLoaded}`} ref={containerRef}>
             {/* Breadcrumbs */}
-            <div className={`${styles.breadcrumb} reveal`}>
+            <div className={styles.breadcrumb}>
                 <Link to="/">Home</Link>
                 <ChevronRight size={13} aria-hidden="true" />
                 <Link to="/shop">Shop</Link>
@@ -217,7 +214,7 @@ export default function ProductDetails() {
             {/* Layout Grid */}
             <div className={styles.layout}>
                 {/* ── Gallery Panel ────────────────────── */}
-                <div className={`${styles.gallery} reveal`}>
+                <div className={styles.gallery}>
                     <ProductGallery
                         images={images}
                         alt={product.name}
@@ -226,7 +223,7 @@ export default function ProductDetails() {
                 </div>
 
                 {/* ── Information Panel ────────────────── */}
-                <div className={`${styles.info} reveal`}>
+                <div className={styles.info}>
                     {product.categories?.name && (
                         <span className={styles.category}>{product.categories.name}</span>
                     )}
@@ -417,7 +414,7 @@ export default function ProductDetails() {
 
             {/* ── Related Jerseys ─────────────────────── */}
             {related.length > 0 && (
-                <section className={`${styles.relatedSection} reveal`}>
+                <section className={styles.relatedSection}>
                     <h2 className={styles.relatedTitle}>You May Also Like</h2>
                     <ProductGrid products={related} />
                 </section>
