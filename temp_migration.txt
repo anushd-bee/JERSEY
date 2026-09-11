@@ -1,0 +1,81 @@
+﻿-- SUPABASE MIGRATION: STORE SETTINGS 
+-- Run this in your Supabase SQL Editor.
+
+CREATE TABLE IF NOT EXISTS public.store_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_name TEXT NOT NULL DEFAULT 'Jersey Store',
+    currency_code TEXT NOT NULL DEFAULT 'INR',
+    currency_symbol TEXT NOT NULL DEFAULT '₹',
+    shipping_fee NUMERIC(10,2) NOT NULL DEFAULT 50 CHECK (shipping_fee >= 0),
+    free_shipping_threshold NUMERIC(10,2) NOT NULL DEFAULT 999 CHECK (free_shipping_threshold >= 0),
+    free_shipping_enabled BOOLEAN NOT NULL DEFAULT true,
+    global_offer_enabled BOOLEAN NOT NULL DEFAULT false,
+    default_offer_percentage NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (default_offer_percentage >= 0 AND default_offer_percentage <= 100),
+    tax_enabled BOOLEAN NOT NULL DEFAULT false,
+    tax_percentage NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (tax_percentage >= 0 AND tax_percentage <= 100),
+    return_enabled BOOLEAN NOT NULL DEFAULT true,
+    return_period_days INTEGER NOT NULL DEFAULT 15 CHECK (return_period_days >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Safely add any missing columns if the table already existed with an older schema
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='store_settings' AND column_name='store_name') THEN
+        ALTER TABLE public.store_settings ADD COLUMN store_name TEXT NOT NULL DEFAULT 'Jersey Store';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='store_settings' AND column_name='currency_code') THEN
+        ALTER TABLE public.store_settings ADD COLUMN currency_code TEXT NOT NULL DEFAULT 'INR';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='store_settings' AND column_name='currency_symbol') THEN
+        ALTER TABLE public.store_settings ADD COLUMN currency_symbol TEXT NOT NULL DEFAULT '₹';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='store_settings' AND column_name='free_shipping_enabled') THEN
+        ALTER TABLE public.store_settings ADD COLUMN free_shipping_enabled BOOLEAN NOT NULL DEFAULT true;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='store_settings' AND column_name='global_offer_enabled') THEN
+        ALTER TABLE public.store_settings ADD COLUMN global_offer_enabled BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='store_settings' AND column_name='return_enabled') THEN
+        ALTER TABLE public.store_settings ADD COLUMN return_enabled BOOLEAN NOT NULL DEFAULT true;
+    END IF;
+    
+    -- Sync up missing order columns for historical snapshots
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' AND column_name='shipping_amount') THEN
+        ALTER TABLE public.orders ADD COLUMN shipping_amount NUMERIC(10,2) DEFAULT 0;
+        ALTER TABLE public.orders ADD COLUMN subtotal NUMERIC(10,2) DEFAULT 0;
+        ALTER TABLE public.orders ADD COLUMN tax_amount NUMERIC(10,2) DEFAULT 0;
+        ALTER TABLE public.orders ADD COLUMN discount_amount NUMERIC(10,2) DEFAULT 0;
+    END IF;
+END $$;
+
+-- Guarantee exactly one defaults row
+INSERT INTO public.store_settings (id)
+SELECT gen_random_uuid()
+WHERE NOT EXISTS (SELECT 1 FROM public.store_settings);
+
+-- Force row level security policies
+ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read access to store settings" ON public.store_settings;
+DROP POLICY IF EXISTS "Admins update store settings" ON public.store_settings;
+
+DROP POLICY IF EXISTS "Admins insert store settings" ON public.store_settings;
+DROP POLICY IF EXISTS "Admins delete store settings" ON public.store_settings;
+
+CREATE POLICY "Public read access to store settings" ON public.store_settings FOR SELECT USING (true);
+
+CREATE POLICY "Admins update store settings" ON public.store_settings FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+CREATE POLICY "Admins insert store settings" ON public.store_settings FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+CREATE POLICY "Admins delete store settings" ON public.store_settings FOR DELETE USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+NOTIFY pgrst, 'reload schema';

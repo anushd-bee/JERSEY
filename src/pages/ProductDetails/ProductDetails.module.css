@@ -178,6 +178,43 @@
     gap: var(--space-md);
 }
 
+.viewToggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: var(--space-sm);
+    justify-content: center;
+}
+
+.toggleBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.toggleBtn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.toggleActive {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.toggleActive:hover {
+    color: white;
+}
+
 /* ── Info Column ─────────────────────────────────── */
 .info {
     display: flex;

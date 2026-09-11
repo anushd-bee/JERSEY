@@ -10,6 +10,7 @@ import {
     RotateCcw,
     Shield,
     Check,
+    Box,
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { useCart } from '../../contexts/CartContext';
@@ -19,6 +20,7 @@ import { useStoreSettings } from '../../contexts/StoreSettingsContext';
 import { formatPrice } from '../../utils/helpers';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import ProductGallery from '../../components/ProductGallery/ProductGallery';
+import JerseyViewer from '../../components/JerseyViewer/JerseyViewer';
 import { ProductSkeleton } from '../../components/Loading/Loading';
 import styles from './ProductDetails.module.css';
 
@@ -39,6 +41,7 @@ export default function ProductDetails() {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [scrolledPast, setScrolledPast] = useState(false);
+    const [show3D, setShow3D] = useState(false);
 
     const wishlisted = user && product && isWishlisted(product.id);
     const containerRef = useRef(null);
@@ -215,11 +218,30 @@ export default function ProductDetails() {
             <div className={styles.layout}>
                 {/* ── Gallery Panel ────────────────────── */}
                 <div className={styles.gallery}>
-                    <ProductGallery
-                        images={images}
-                        alt={product.name}
-                        discount={discountPercent}
-                    />
+                    <div className={styles.viewToggle}>
+                        <button
+                            className={`${styles.toggleBtn} ${!show3D ? styles.toggleActive : ''}`}
+                            onClick={() => setShow3D(false)}
+                        >
+                            Photos
+                        </button>
+                        <button
+                            className={`${styles.toggleBtn} ${show3D ? styles.toggleActive : ''}`}
+                            onClick={() => setShow3D(true)}
+                        >
+                            <Box size={16} />
+                            3D Viewer
+                        </button>
+                    </div>
+                    {show3D ? (
+                        <JerseyViewer product={product} />
+                    ) : (
+                        <ProductGallery
+                            images={images}
+                            alt={product.name}
+                            discount={discountPercent}
+                        />
+                    )}
                 </div>
 
                 {/* ── Information Panel ────────────────── */}
